@@ -7,9 +7,9 @@ use tokio::task::JoinSet;
 
 const MAX_ITEMS: usize = 20;
 
-struct FeedEntry {
-    source: String,
-    entry: Entry,
+pub struct FeedEntry {
+    pub source: String,
+    pub entry: Entry,
 }
 
 fn load_urls() -> Vec<String> {
@@ -33,7 +33,7 @@ async fn fetch_feed(url: String) -> Result<(String, Vec<Entry>), Box<dyn Error +
     Ok((title, feed.entries))
 }
 
-pub async fn run() -> Result<(), Box<dyn Error>> {
+pub async fn run() -> Result<Vec<FeedEntry>, Box<dyn Error>> {
     let urls = load_urls();
 
     let mut tasks = JoinSet::new();
@@ -66,9 +66,9 @@ pub async fn run() -> Result<(), Box<dyn Error>> {
     let mut seen = HashSet::new();
     let mut shown = 0;
 
-    for item in all_entries.iter() {
+    all_entries.retain(|item| {
         if shown >= MAX_ITEMS {
-            break;
+            return false;
         }
 
         let key = if !item.entry.id.is_empty() {
@@ -81,35 +81,12 @@ pub async fn run() -> Result<(), Box<dyn Error>> {
         };
 
         if !seen.insert(key) {
-            continue;
-        }
-
-        let title = item.entry.title.as_ref().map_or("Untitled", |t| &t.content);
-        let link = item.entry.links.first().map_or("N/A", |l| &l.href);
-        let date = item.entry.published.or(item.entry.updated).map_or_else(
-            || "N/A".to_string(),
-            |d| d.format("%d-%m-%Y %H:%M").to_string(),
-        );
-
-        let desc = item
-            .entry
-            .summary
-            .as_ref()
-            .map(|s| s.content.to_owned())
-            .unwrap_or_default();
-
-        println!("----------------------------------------------");
-        println!("{}. {}", shown + 1, title);
-        println!("   Source: {}", item.source);
-        println!("   Link: {}", link);
-        println!("   Date: {}", date);
-
-        if !desc.is_empty() {
-            println!("   {}", desc);
+            return false;
         }
 
         shown += 1;
-    }
+        true
+    });
 
-    Ok(())
+    Ok(all_entries)
 }

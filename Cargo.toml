@@ -7,3 +7,6 @@ edition = "2024"
 reqwest = "0.12"
 feed-rs = "2"
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+ratatui = "0.30.0"
+color-eyre = "0.6.5"
+crossterm = "0.29.0"
