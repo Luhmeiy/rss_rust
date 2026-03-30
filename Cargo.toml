@@ -10,3 +10,4 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 ratatui = "0.30.0"
 color-eyre = "0.6.5"
 crossterm = "0.29.0"
+open = "5.3.3"

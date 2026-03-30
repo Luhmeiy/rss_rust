@@ -3,76 +3,31 @@ use std::io;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
     DefaultTerminal, Frame,
-    buffer::Buffer,
-    layout::{Constraint, Layout, Rect},
-    style::Stylize,
+    layout::{Constraint, Layout},
+    style::{Color, Modifier, Style, Stylize},
     symbols::border,
     text::Line,
-    widgets::{Block, Paragraph, Widget, Wrap},
+    widgets::{Block, List, ListItem, ListState},
 };
 
 use crate::feed::FeedEntry;
 
 pub struct App {
     entries: Vec<FeedEntry>,
+    list_state: ListState,
     exit: bool,
-}
-
-impl Widget for &App {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        let [border_area] = Layout::vertical([Constraint::Fill(1)])
-            .margin(1)
-            .areas(area);
-
-        let [inner_area] = Layout::vertical([Constraint::Fill(1)])
-            .margin(2)
-            .areas(border_area);
-
-        let title = Line::from(" RSS Feed ".bold());
-        Block::bordered()
-            .title(title.centered())
-            .border_set(border::THICK)
-            .render(border_area, buf);
-
-        let mut lines: Vec<Line> = Vec::new();
-
-        for item in self.entries.iter() {
-            let title = item.entry.title.as_ref().map_or("Untitled", |t| &t.content);
-            let link = item.entry.links.first().map_or("N/A", |l| &l.href);
-            let date = item.entry.published.or(item.entry.updated).map_or_else(
-                || "N/A".to_string(),
-                |d| d.format("%d-%m-%Y %H:%M").to_string(),
-            );
-
-            let desc = item
-                .entry
-                .summary
-                .as_ref()
-                .map(|s| s.content.to_owned())
-                .unwrap_or_default();
-
-            lines.push("----------------------------------------------".into());
-            lines.push(title.into());
-
-            lines.push(format!("Source: {}", item.source).into());
-            lines.push(format!("Link: {}", link).into());
-            lines.push(format!("Date: {}", date).into());
-
-            if !desc.is_empty() {
-                lines.push(format!("{}", desc).into());
-            }
-        }
-
-        Paragraph::new(lines)
-            .wrap(Wrap { trim: true })
-            .render(inner_area, buf);
-    }
 }
 
 impl App {
     pub fn new(entries: Vec<FeedEntry>) -> Self {
+        let mut list_state = ListState::default();
+        if !entries.is_empty() {
+            list_state.select(Some(0));
+        }
+
         App {
             entries,
+            list_state,
             exit: false,
         }
     }
@@ -85,13 +40,73 @@ impl App {
         Ok(())
     }
 
-    fn draw(&self, frame: &mut Frame) {
-        frame.render_widget(self, frame.area());
+    fn draw(&mut self, frame: &mut Frame) {
+        let [border_area] = Layout::vertical([Constraint::Fill(1)])
+            .margin(1)
+            .areas(frame.area());
+
+        let border = Block::bordered()
+            .title(Line::from(" RSS Feed ").bold().centered())
+            .border_set(border::THICK);
+
+        let items: Vec<ListItem> = self
+            .entries
+            .iter()
+            .map(|item| {
+                let title = item.entry.title.as_ref().map_or("Untitled", |t| &t.content);
+                let date = item.entry.published.or(item.entry.updated).map_or_else(
+                    || "N/A".to_string(),
+                    |d| d.format("%d-%m-%Y %H:%M").to_string(),
+                );
+
+                let desc = item
+                    .entry
+                    .summary
+                    .as_ref()
+                    .map(|s| s.content.to_owned())
+                    .unwrap_or_default();
+
+                let mut lines = vec![
+                    Line::from(title.to_string()),
+                    Line::from(format!("Source: {}", item.source)),
+                    Line::from(format!("Date: {}", date)),
+                ];
+
+                if !desc.is_empty() {
+                    lines.push(Line::from(format!("{}", desc)));
+                }
+
+                lines.push(Line::from(""));
+                ListItem::new(lines)
+            })
+            .collect();
+
+        let list = List::new(items)
+            .block(border)
+            .highlight_style(
+                Style::default()
+                    .fg(Color::Blue)
+                    .add_modifier(Modifier::BOLD),
+            )
+            .highlight_symbol("> ");
+
+        frame.render_stateful_widget(list, border_area, &mut self.list_state);
     }
 
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
-            KeyCode::Char('q') => self.exit(),
+            KeyCode::Down => self.list_state.select_next(),
+            KeyCode::Up => self.list_state.select_previous(),
+            KeyCode::Enter => {
+                if let Some(selected) = self.list_state.selected() {
+                    if let Some(entry) = self.entries.get(selected) {
+                        if let Some(link) = entry.entry.links.first() {
+                            let _ = open::that(&link.href);
+                        }
+                    }
+                }
+            }
+            KeyCode::Char('q') => self.exit = true,
             _ => {}
         }
     }
@@ -104,9 +119,5 @@ impl App {
             _ => {}
         };
         Ok(())
-    }
-
-    fn exit(&mut self) {
-        self.exit = true;
     }
 }
