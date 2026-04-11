@@ -3,14 +3,14 @@ use std::io;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
     DefaultTerminal, Frame,
-    layout::{Constraint, Flex, Layout},
-    style::{Color, Modifier, Style, Stylize},
+    layout::{Constraint, Flex, HorizontalAlignment, Layout},
+    style::{Color, Modifier, Style},
     symbols::border,
     text::Line,
     widgets::{Block, List, ListItem, ListState, Paragraph, Wrap},
 };
 
-use crate::feed::FeedEntry;
+use crate::{feed::FeedEntry, search::Search};
 
 #[derive(PartialEq)]
 enum ViewMode {
@@ -23,6 +23,7 @@ pub struct App {
     list_state: ListState,
     view_mode: ViewMode,
     scroll_offset: u16,
+    search: Search,
     exit: bool,
 }
 
@@ -38,6 +39,7 @@ impl App {
             list_state,
             view_mode: ViewMode::List,
             scroll_offset: 0,
+            search: Search::new(),
             exit: false,
         }
     }
@@ -52,13 +54,15 @@ impl App {
 
     fn draw(&mut self, frame: &mut Frame) {
         if self.view_mode == ViewMode::List {
-            let [border_area] = Layout::vertical([Constraint::Fill(1)])
-                .margin(1)
-                .areas(frame.area());
+            let layout = Layout::vertical([Constraint::Length(3), Constraint::Fill(1)]).margin(1);
+            let [search_bar_area, body_area] = frame.area().layout(&layout);
+
+            self.search.render(frame, search_bar_area);
 
             let border = Block::bordered()
-                .title(Line::from(" RSS Feed ").bold().centered())
-                .title_bottom(Line::from("[↑/↓] Navigate  [o] Open  [v] View  [q] Quit").centered())
+                .title(" RSS Feed ")
+                .title_bottom(" [↑/↓] Navigate  [o] Open  [v] View  [/] Search  [q] Quit ")
+                .title_alignment(HorizontalAlignment::Center)
                 .border_set(border::THICK);
 
             let items: Vec<ListItem> = self
@@ -91,7 +95,7 @@ impl App {
                 )
                 .highlight_symbol("> ");
 
-            frame.render_stateful_widget(list, border_area, &mut self.list_state);
+            frame.render_stateful_widget(list, body_area, &mut self.list_state);
         } else {
             let outer_area = frame.area();
 
@@ -111,11 +115,9 @@ impl App {
                 .unwrap_or_default();
 
             let outer_block = Block::bordered()
-                .title(Line::from(format!(" {} ", title)).bold().centered())
-                .title_bottom(
-                    Line::from("[↑/↓] Scroll  [←/→] Next/Prev  [o] Open  [Esc] Back  [q] Quit")
-                        .centered(),
-                )
+                .title(format!(" {} ", title))
+                .title_bottom("[↑/↓] Scroll  [←/→] Next/Prev  [o] Open  [Esc] Back  [q] Quit")
+                .title_alignment(HorizontalAlignment::Center)
                 .border_set(border::THICK);
             frame.render_widget(outer_block, outer_area);
 
@@ -170,6 +172,7 @@ impl App {
                     self.scroll_offset = 0;
                 }
             }
+            KeyCode::Char('/') => self.search.toggle_input_mode(),
             KeyCode::Char('o') => {
                 if let Some(selected) = self.list_state.selected() {
                     if let Some(entry) = self.entries.get(selected) {
@@ -192,7 +195,11 @@ impl App {
     fn handle_events(&mut self) -> io::Result<()> {
         match event::read()? {
             Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
-                self.handle_key_event(key_event)
+                if self.search.is_search() {
+                    self.search.handle_key_event(key_event);
+                } else {
+                    self.handle_key_event(key_event)
+                }
             }
             _ => {}
         };
