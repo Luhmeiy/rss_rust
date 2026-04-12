@@ -107,6 +107,10 @@ impl Search {
         new_cursor_pos.clamp(0, self.search.chars().count())
     }
 
+    pub fn get_search(&self) -> &str {
+        &self.search
+    }
+
     pub fn is_search(&self) -> bool {
         self.input_mode == InputMode::Searching
     }

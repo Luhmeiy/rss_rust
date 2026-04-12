@@ -5,7 +5,7 @@ use ratatui::{
     style::{Color, Modifier, Style},
     symbols::border,
     text::Line,
-    widgets::{Block, List, ListItem},
+    widgets::{Block, List, ListItem, Paragraph},
 };
 
 use crate::{
@@ -36,9 +36,15 @@ impl ListView {
             .title_alignment(HorizontalAlignment::Center)
             .border_set(border::THICK);
 
+        let search = &self.search.get_search().to_lowercase();
+
         let items: Vec<ListItem> = shared_state
             .entries
             .iter()
+            .filter(|item| {
+                item.title().to_lowercase().contains(search)
+                    || item.summary().to_lowercase().contains(search)
+            })
             .map(|item| {
                 let desc = item.summary();
 
@@ -57,16 +63,21 @@ impl ListView {
             })
             .collect();
 
-        let list = List::new(items)
-            .block(border)
-            .highlight_style(
-                Style::default()
-                    .fg(Color::Blue)
-                    .add_modifier(Modifier::BOLD),
-            )
-            .highlight_symbol("> ");
+        if items.is_empty() {
+            let empty_list = Paragraph::new(" No entries found.").block(border);
+            frame.render_widget(empty_list, body_area);
+        } else {
+            let list = List::new(items)
+                .block(border)
+                .highlight_style(
+                    Style::default()
+                        .fg(Color::Blue)
+                        .add_modifier(Modifier::BOLD),
+                )
+                .highlight_symbol("> ");
 
-        frame.render_stateful_widget(list, body_area, &mut shared_state.list_state);
+            frame.render_stateful_widget(list, body_area, &mut shared_state.list_state);
+        }
     }
 
     pub fn handle_key_event(&mut self, key_event: KeyEvent, shared_state: &mut SharedState) {
