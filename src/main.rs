@@ -2,7 +2,7 @@ use ratatui;
 use std::error::Error;
 
 mod feed;
-mod search;
+mod state;
 mod ui;
 
 #[tokio::main]
