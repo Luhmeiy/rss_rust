@@ -69,7 +69,7 @@ async fn fetch_feed(url: String) -> Result<(String, Vec<Entry>), Box<dyn Error +
     Ok((title, feed.entries))
 }
 
-pub async fn run() -> Result<Vec<FeedEntry>, Box<dyn Error>> {
+pub async fn run() -> Result<(Vec<String>, Vec<FeedEntry>), Box<dyn Error>> {
     let urls = load_urls();
 
     let mut tasks = JoinSet::new();
@@ -77,14 +77,19 @@ pub async fn run() -> Result<Vec<FeedEntry>, Box<dyn Error>> {
         tasks.spawn(fetch_feed(url));
     }
 
+    let mut sources: Vec<String> = Vec::new();
     let mut all_entries: Vec<FeedEntry> = Vec::new();
     while let Some(result) = tasks.join_next().await {
         match result {
             Ok(Ok((source, entries))) => {
-                for entry in entries {
+                for (index, entry) in entries.iter().enumerate() {
+                    if index == 0 {
+                        sources.push(source.clone());
+                    }
+
                     all_entries.push(FeedEntry {
                         source: source.clone(),
-                        entry,
+                        entry: entry.clone(),
                     });
                 }
             }
@@ -124,5 +129,5 @@ pub async fn run() -> Result<Vec<FeedEntry>, Box<dyn Error>> {
         true
     });
 
-    Ok(all_entries)
+    Ok((sources, all_entries))
 }

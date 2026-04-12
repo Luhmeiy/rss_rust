@@ -13,6 +13,7 @@ pub struct SharedState {
     pub list_state: ListState,
     pub view_mode: ViewMode,
     pub exit: bool,
+    pub show_popup: bool,
 }
 
 impl SharedState {
@@ -27,6 +28,11 @@ impl SharedState {
             list_state,
             view_mode: ViewMode::List,
             exit: false,
+            show_popup: false,
         }
+    }
+
+    pub fn toggle_show_popup(&mut self) {
+        self.show_popup = !self.show_popup;
     }
 }

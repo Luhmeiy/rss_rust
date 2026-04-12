@@ -1,6 +1,8 @@
 pub mod content_view;
+pub mod list_header;
 pub mod list_view;
 pub mod search;
+pub mod source_popup;
 
 use std::io;
 
@@ -10,21 +12,25 @@ use ratatui::{DefaultTerminal, Frame};
 use crate::{
     feed::FeedEntry,
     state::{SharedState, ViewMode},
-    ui::{content_view::ContentView, list_view::ListView},
+    ui::{content_view::ContentView, list_view::ListView, source_popup::SourcePopup},
 };
 
 pub struct App {
     shared_state: SharedState,
     content_view: ContentView,
     list_view: ListView,
+    source_popup: SourcePopup,
+    sources: Vec<String>,
 }
 
 impl App {
-    pub fn new(entries: Vec<FeedEntry>) -> Self {
+    pub fn new(sources: Vec<String>, entries: Vec<FeedEntry>) -> Self {
         App {
             shared_state: SharedState::new(entries),
             content_view: ContentView::new(),
             list_view: ListView::new(),
+            source_popup: SourcePopup::new(),
+            sources,
         }
     }
 
@@ -42,13 +48,23 @@ impl App {
         } else {
             self.content_view.render(frame, &mut self.shared_state);
         }
+
+        if self.shared_state.show_popup {
+            self.source_popup.render(frame, &self.sources);
+        }
     }
 
     fn handle_events(&mut self) -> io::Result<()> {
         match event::read()? {
             Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
                 if self.list_view.is_search() {
-                    self.list_view.search.handle_key_event(key_event);
+                    self.list_view
+                        .list_header
+                        .search
+                        .handle_key_event(key_event);
+                } else if self.shared_state.show_popup {
+                    self.source_popup
+                        .handle_key_event(key_event, &mut self.shared_state);
                 } else {
                     match self.shared_state.view_mode {
                         ViewMode::List => self

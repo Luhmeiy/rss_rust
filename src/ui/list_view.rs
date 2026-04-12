@@ -10,25 +10,26 @@ use ratatui::{
 
 use crate::{
     state::{SharedState, ViewMode},
-    ui::search::Search,
+    ui::list_header::ListHeader,
 };
 
 pub struct ListView {
-    pub search: Search,
+    pub list_header: ListHeader,
 }
 
 impl ListView {
     pub fn new() -> Self {
         ListView {
-            search: Search::new(),
+            list_header: ListHeader::new(),
         }
     }
 
     pub fn render(&self, frame: &mut Frame, shared_state: &mut SharedState) {
         let layout = Layout::vertical([Constraint::Length(3), Constraint::Fill(1)]).margin(1);
-        let [search_bar_area, body_area] = frame.area().layout(&layout);
+        let [header_area, body_area] = frame.area().layout(&layout);
 
-        self.search.render(frame, search_bar_area);
+        self.list_header
+            .render(frame, header_area, shared_state.show_popup);
 
         let border = Block::bordered()
             .title(" RSS Feed ")
@@ -36,7 +37,7 @@ impl ListView {
             .title_alignment(HorizontalAlignment::Center)
             .border_set(border::THICK);
 
-        let search = &self.search.get_search().to_lowercase();
+        let search = &self.list_header.get_search().to_lowercase();
 
         let items: Vec<ListItem> = shared_state
             .entries
@@ -84,7 +85,8 @@ impl ListView {
         match key_event.code {
             KeyCode::Down => shared_state.list_state.select_next(),
             KeyCode::Up => shared_state.list_state.select_previous(),
-            KeyCode::Char('/') => self.search.toggle_input_mode(),
+            KeyCode::Char('/') => self.list_header.toggle_input_mode(),
+            KeyCode::Char('s') => shared_state.toggle_show_popup(),
             KeyCode::Char('o') => {
                 if let Some(selected) = shared_state.list_state.selected() {
                     if let Some(entry) = shared_state.entries.get(selected) {
@@ -101,6 +103,6 @@ impl ListView {
     }
 
     pub fn is_search(&self) -> bool {
-        self.search.is_search()
+        self.list_header.is_search()
     }
 }
