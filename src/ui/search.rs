@@ -58,8 +58,8 @@ impl Search {
             KeyCode::Right => self.move_cursor_right(),
             KeyCode::Left => self.move_cursor_left(),
             KeyCode::Backspace => self.delete_char(),
-            KeyCode::Char(to_insert) => self.enter_char(to_insert),
             KeyCode::Esc => self.toggle_input_mode(),
+            KeyCode::Char(to_insert) => self.enter_char(to_insert),
             _ => {}
         }
     }

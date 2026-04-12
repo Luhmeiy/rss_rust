@@ -1,0 +1,67 @@
+pub mod content_view;
+pub mod list_view;
+pub mod search;
+
+use std::io;
+
+use crossterm::event::{self, Event, KeyEventKind};
+use ratatui::{DefaultTerminal, Frame};
+
+use crate::{
+    feed::FeedEntry,
+    state::{SharedState, ViewMode},
+    ui::{content_view::ContentView, list_view::ListView},
+};
+
+pub struct App {
+    shared_state: SharedState,
+    content_view: ContentView,
+    list_view: ListView,
+}
+
+impl App {
+    pub fn new(entries: Vec<FeedEntry>) -> Self {
+        App {
+            shared_state: SharedState::new(entries),
+            content_view: ContentView::new(),
+            list_view: ListView::new(),
+        }
+    }
+
+    pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
+        while !self.shared_state.exit {
+            terminal.draw(|frame| self.draw(frame))?;
+            self.handle_events()?;
+        }
+        Ok(())
+    }
+
+    fn draw(&mut self, frame: &mut Frame) {
+        if self.shared_state.view_mode == ViewMode::List {
+            self.list_view.render(frame, &mut self.shared_state);
+        } else {
+            self.content_view.render(frame, &mut self.shared_state);
+        }
+    }
+
+    fn handle_events(&mut self) -> io::Result<()> {
+        match event::read()? {
+            Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
+                if self.list_view.is_search() {
+                    self.list_view.search.handle_key_event(key_event);
+                } else {
+                    match self.shared_state.view_mode {
+                        ViewMode::List => self
+                            .list_view
+                            .handle_key_event(key_event, &mut self.shared_state),
+                        ViewMode::Content => self
+                            .content_view
+                            .handle_key_event(key_event, &mut self.shared_state),
+                    }
+                }
+            }
+            _ => {}
+        };
+        Ok(())
+    }
+}
