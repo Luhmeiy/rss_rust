@@ -43,8 +43,9 @@ impl ListView {
             .entries
             .iter()
             .filter(|item| {
-                item.title().to_lowercase().contains(search)
-                    || item.summary().to_lowercase().contains(search)
+                shared_state.selected_sources.contains(&item.source())
+                    && (item.title().to_lowercase().contains(search)
+                        || item.summary().to_lowercase().contains(search))
             })
             .map(|item| {
                 let desc = item.summary();

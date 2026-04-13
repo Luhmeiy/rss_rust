@@ -20,17 +20,15 @@ pub struct App {
     content_view: ContentView,
     list_view: ListView,
     source_popup: SourcePopup,
-    sources: Vec<String>,
 }
 
 impl App {
     pub fn new(sources: Vec<String>, entries: Vec<FeedEntry>) -> Self {
         App {
-            shared_state: SharedState::new(entries),
+            shared_state: SharedState::new(entries, sources),
             content_view: ContentView::new(),
             list_view: ListView::new(),
             source_popup: SourcePopup::new(),
-            sources,
         }
     }
 
@@ -50,7 +48,7 @@ impl App {
         }
 
         if self.shared_state.show_popup {
-            self.source_popup.render(frame, &self.sources);
+            self.source_popup.render(frame, &self.shared_state);
         }
     }
 

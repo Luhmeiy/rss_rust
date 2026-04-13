@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use ratatui::widgets::ListState;
 
 use crate::feed::FeedEntry;
@@ -14,14 +16,18 @@ pub struct SharedState {
     pub view_mode: ViewMode,
     pub exit: bool,
     pub show_popup: bool,
+    pub sources: Vec<String>,
+    pub selected_sources: HashSet<String>,
 }
 
 impl SharedState {
-    pub fn new(entries: Vec<FeedEntry>) -> Self {
+    pub fn new(entries: Vec<FeedEntry>, mut sources: Vec<String>) -> Self {
         let mut list_state = ListState::default();
         if !entries.is_empty() {
             list_state.select(Some(0));
         }
+
+        sources.sort();
 
         SharedState {
             entries,
@@ -29,6 +35,8 @@ impl SharedState {
             view_mode: ViewMode::List,
             exit: false,
             show_popup: false,
+            sources: sources.clone(),
+            selected_sources: sources.into_iter().collect(),
         }
     }
 

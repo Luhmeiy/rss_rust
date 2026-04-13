@@ -17,7 +17,7 @@ impl ListHeader {
     }
 
     pub fn render(&self, frame: &mut Frame, header_area: Rect, show_popup: bool) {
-        let layout = Layout::horizontal([Constraint::Length(15), Constraint::Fill(1)]);
+        let layout = Layout::horizontal([Constraint::Length(15), Constraint::Fill(1)]).spacing(1);
         let [source_area, search_bar_area] = header_area.layout(&layout);
 
         render_source_button(frame, source_area, show_popup);
