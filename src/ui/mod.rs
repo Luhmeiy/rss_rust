@@ -1,4 +1,5 @@
 pub mod content_view;
+pub mod input;
 pub mod list_header;
 pub mod list_view;
 pub mod new_feed_popup;

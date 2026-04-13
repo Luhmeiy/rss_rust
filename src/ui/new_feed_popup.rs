@@ -7,18 +7,16 @@ use ratatui::{
     widgets::{Block, Clear, Padding, Paragraph},
 };
 
-use crate::state::SharedState;
+use crate::{state::SharedState, ui::input::Input};
 
 pub struct NewFeedPopup {
-    feed: String,
-    character_index: usize,
+    input: Input,
 }
 
 impl NewFeedPopup {
     pub fn new() -> Self {
         NewFeedPopup {
-            feed: String::new(),
-            character_index: 0,
+            input: Input::new(),
         }
     }
 
@@ -40,75 +38,28 @@ impl NewFeedPopup {
             .padding(Padding::left(1))
             .border_set(border::THICK);
 
-        let feed_bar = Paragraph::new(self.feed.clone()).block(feed_bar_border);
+        let feed_bar = Paragraph::new(self.input.get_field()).block(feed_bar_border);
         frame.render_widget(feed_bar, inner_area);
 
         frame.set_cursor_position(Position::new(
-            inner_area.x + self.character_index as u16 + 2,
+            inner_area.x + self.input.get_character_index() as u16 + 2,
             inner_area.y + 1,
         ))
     }
 
     pub fn handle_key_event(&mut self, key_event: KeyEvent, shared_state: &mut SharedState) {
         match key_event.code {
-            KeyCode::Right => self.move_cursor_right(),
-            KeyCode::Left => self.move_cursor_left(),
-            KeyCode::Backspace => self.delete_char(),
-            KeyCode::Enter => {
-                self.feed.clear();
-                self.character_index = 0;
-            }
+            KeyCode::Right => self.input.move_cursor_right(),
+            KeyCode::Left => self.input.move_cursor_left(),
+            KeyCode::Backspace => self.input.delete_char(),
+            KeyCode::Enter => self.input.reset(),
             KeyCode::Esc => {
-                self.feed.clear();
-                self.character_index = 0;
+                self.input.reset();
                 shared_state.toggle_show_new_feed_popup();
             }
-            KeyCode::Char(to_insert) => self.enter_char(to_insert),
+            KeyCode::Char(to_insert) => self.input.enter_char(to_insert),
             _ => {}
         }
-    }
-
-    fn move_cursor_left(&mut self) {
-        let cursor_moved_left = self.character_index.saturating_sub(1);
-        self.character_index = self.clamp_cursor(cursor_moved_left);
-    }
-
-    fn move_cursor_right(&mut self) {
-        let cursor_moved_right = self.character_index.saturating_add(1);
-        self.character_index = self.clamp_cursor(cursor_moved_right);
-    }
-
-    fn enter_char(&mut self, new_char: char) {
-        let index = self.byte_index();
-        self.feed.insert(index, new_char);
-        self.move_cursor_right();
-    }
-
-    fn byte_index(&self) -> usize {
-        self.feed
-            .char_indices()
-            .map(|(i, _)| i)
-            .nth(self.character_index)
-            .unwrap_or(self.feed.len())
-    }
-
-    fn delete_char(&mut self) {
-        let is_not_cursor_leftmost = self.character_index != 0;
-
-        if is_not_cursor_leftmost {
-            let current_index = self.character_index;
-            let from_left_to_current_index = current_index - 1;
-
-            let before_char_to_delete = self.feed.chars().take(from_left_to_current_index);
-            let after_char_to_delete = self.feed.chars().skip(current_index);
-
-            self.feed = before_char_to_delete.chain(after_char_to_delete).collect();
-            self.move_cursor_left();
-        }
-    }
-
-    fn clamp_cursor(&self, new_cursor_pos: usize) -> usize {
-        new_cursor_pos.clamp(0, self.feed.chars().count())
     }
 }
 
