@@ -92,7 +92,7 @@ impl SourcePopup {
                     }
                 }
             }
-            KeyCode::Char('s') | KeyCode::Esc => shared_state.toggle_show_popup(),
+            KeyCode::Char('s') | KeyCode::Esc => shared_state.toggle_show_feeds_popup(),
             _ => {}
         }
     }

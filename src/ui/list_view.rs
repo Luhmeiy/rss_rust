@@ -28,8 +28,7 @@ impl ListView {
         let layout = Layout::vertical([Constraint::Length(3), Constraint::Fill(1)]).margin(1);
         let [header_area, body_area] = frame.area().layout(&layout);
 
-        self.list_header
-            .render(frame, header_area, shared_state.show_popup);
+        self.list_header.render(frame, header_area, shared_state);
 
         let border = Block::bordered()
             .title(" RSS Feed ")
@@ -87,7 +86,8 @@ impl ListView {
             KeyCode::Down => shared_state.list_state.select_next(),
             KeyCode::Up => shared_state.list_state.select_previous(),
             KeyCode::Char('/') => self.list_header.toggle_input_mode(),
-            KeyCode::Char('s') => shared_state.toggle_show_popup(),
+            KeyCode::Char('s') => shared_state.toggle_show_feeds_popup(),
+            KeyCode::Char('a') => shared_state.toggle_show_new_feed_popup(),
             KeyCode::Char('o') => {
                 if let Some(selected) = shared_state.list_state.selected() {
                     if let Some(entry) = shared_state.entries.get(selected) {

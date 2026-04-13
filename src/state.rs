@@ -15,7 +15,8 @@ pub struct SharedState {
     pub list_state: ListState,
     pub view_mode: ViewMode,
     pub exit: bool,
-    pub show_popup: bool,
+    pub show_feeds_popup: bool,
+    pub show_new_feed_popup: bool,
     pub sources: Vec<String>,
     pub selected_sources: HashSet<String>,
 }
@@ -34,13 +35,18 @@ impl SharedState {
             list_state,
             view_mode: ViewMode::List,
             exit: false,
-            show_popup: false,
+            show_feeds_popup: false,
+            show_new_feed_popup: false,
             sources: sources.clone(),
             selected_sources: sources.into_iter().collect(),
         }
     }
 
-    pub fn toggle_show_popup(&mut self) {
-        self.show_popup = !self.show_popup;
+    pub fn toggle_show_feeds_popup(&mut self) {
+        self.show_feeds_popup = !self.show_feeds_popup;
+    }
+
+    pub fn toggle_show_new_feed_popup(&mut self) {
+        self.show_new_feed_popup = !self.show_new_feed_popup;
     }
 }

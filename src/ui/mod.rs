@@ -1,6 +1,7 @@
 pub mod content_view;
 pub mod list_header;
 pub mod list_view;
+pub mod new_feed_popup;
 pub mod search;
 pub mod source_popup;
 
@@ -12,7 +13,10 @@ use ratatui::{DefaultTerminal, Frame};
 use crate::{
     feed::FeedEntry,
     state::{SharedState, ViewMode},
-    ui::{content_view::ContentView, list_view::ListView, source_popup::SourcePopup},
+    ui::{
+        content_view::ContentView, list_view::ListView, new_feed_popup::NewFeedPopup,
+        source_popup::SourcePopup,
+    },
 };
 
 pub struct App {
@@ -20,6 +24,7 @@ pub struct App {
     content_view: ContentView,
     list_view: ListView,
     source_popup: SourcePopup,
+    new_feed_popup: NewFeedPopup,
 }
 
 impl App {
@@ -29,6 +34,7 @@ impl App {
             content_view: ContentView::new(),
             list_view: ListView::new(),
             source_popup: SourcePopup::new(),
+            new_feed_popup: NewFeedPopup::new(),
         }
     }
 
@@ -47,8 +53,12 @@ impl App {
             self.content_view.render(frame, &mut self.shared_state);
         }
 
-        if self.shared_state.show_popup {
+        if self.shared_state.show_feeds_popup {
             self.source_popup.render(frame, &self.shared_state);
+        }
+
+        if self.shared_state.show_new_feed_popup {
+            self.new_feed_popup.render(frame);
         }
     }
 
@@ -60,8 +70,11 @@ impl App {
                         .list_header
                         .search
                         .handle_key_event(key_event);
-                } else if self.shared_state.show_popup {
+                } else if self.shared_state.show_feeds_popup {
                     self.source_popup
+                        .handle_key_event(key_event, &mut self.shared_state);
+                } else if self.shared_state.show_new_feed_popup {
+                    self.new_feed_popup
                         .handle_key_event(key_event, &mut self.shared_state);
                 } else {
                     match self.shared_state.view_mode {
