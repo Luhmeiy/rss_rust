@@ -8,6 +8,7 @@ use tokio::task::JoinSet;
 
 const MAX_ITEMS: usize = 20;
 
+#[derive(Clone, PartialEq)]
 pub struct FeedEntry {
     pub source: String,
     pub entry: Entry,

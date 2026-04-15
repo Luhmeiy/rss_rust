@@ -12,6 +12,7 @@ pub enum ViewMode {
 
 pub struct SharedState {
     pub entries: Vec<FeedEntry>,
+    pub favorites: Vec<FeedEntry>,
     pub list_state: ListState,
     pub view_mode: ViewMode,
     pub exit: bool,
@@ -32,6 +33,7 @@ impl SharedState {
 
         SharedState {
             entries,
+            favorites: Vec::new(),
             list_state,
             view_mode: ViewMode::List,
             exit: false,

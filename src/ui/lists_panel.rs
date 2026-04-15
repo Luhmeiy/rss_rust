@@ -20,7 +20,7 @@ impl ListsPanel {
         list_state.select(Some(0));
 
         ListsPanel {
-            lists: Vec::new(),
+            lists: Vec::from(["All".to_string(), "Favorites".to_string()]),
             list_state,
         }
     }
@@ -56,5 +56,10 @@ impl ListsPanel {
             KeyCode::Enter => *cursor_position = CursorPosition::Feed,
             _ => {}
         }
+    }
+
+    pub fn get_list_state(&self) -> &str {
+        let index = self.list_state.selected().unwrap();
+        &self.lists[index]
     }
 }

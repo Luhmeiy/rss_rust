@@ -30,7 +30,7 @@ impl Search {
 
     pub fn render(&self, frame: &mut Frame, search_bar_area: Rect) {
         let search_bar_border = Block::bordered()
-            .title(" Search ")
+            .title(" [/] Search ")
             .padding(Padding::left(1))
             .border_set(border::THICK);
 

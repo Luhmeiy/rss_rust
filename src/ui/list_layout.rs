@@ -60,7 +60,14 @@ impl ListLayout {
             display_area = body_area;
         }
 
+        let entries = match self.lists_panel.get_list_state() {
+            "All" => shared_state.entries.clone(),
+            "Favorites" => shared_state.favorites.clone(),
+            _ => shared_state.entries.clone(),
+        };
+
         feed_panel::render(
+            entries,
             frame,
             shared_state,
             display_area,

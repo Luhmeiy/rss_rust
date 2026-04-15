@@ -8,9 +8,13 @@ use ratatui::{
     widgets::{Block, List, ListItem, Paragraph},
 };
 
-use crate::state::{SharedState, ViewMode};
+use crate::{
+    feed::FeedEntry,
+    state::{SharedState, ViewMode},
+};
 
 pub fn render(
+    entries: Vec<FeedEntry>,
     frame: &mut Frame,
     shared_state: &mut SharedState,
     body_area: Rect,
@@ -25,15 +29,12 @@ pub fn render(
 
     let border = Block::bordered()
         .title(" RSS Feed ")
-        .title_bottom(
-            " [↑/↓] Navigate  [Tab] Toggle Lists  [o] Open  [v] View  [/] Search  [q] Quit ",
-        )
+        .title_bottom(" [↑/↓] Nav  [Tab] Lists  [o] Open  [v] View  [f] Fav  [q] Quit ")
         .title_alignment(HorizontalAlignment::Center)
         .border_set(border::THICK)
         .border_style(border_style);
 
-    let items: Vec<ListItem> = shared_state
-        .entries
+    let items: Vec<ListItem> = entries
         .iter()
         .filter(|item| {
             shared_state.selected_sources.contains(&item.source())
@@ -43,8 +44,15 @@ pub fn render(
         .map(|item| {
             let desc = item.summary();
 
+            let title = item.title();
+            let formatted_title = if shared_state.favorites.contains(item) {
+                format!("[★] {}", title)
+            } else {
+                title
+            };
+
             let mut lines = vec![
-                Line::from(item.title()),
+                Line::from(formatted_title),
                 Line::from(format!("Source: {}", item.source())),
                 Line::from(format!("Date: {}", item.date())),
             ];
@@ -80,6 +88,15 @@ pub fn handle_key_event(key_event: KeyEvent, shared_state: &mut SharedState) {
         KeyCode::Down => shared_state.list_state.select_next(),
         KeyCode::Up => shared_state.list_state.select_previous(),
         KeyCode::Char('v') => shared_state.view_mode = ViewMode::Content,
+        KeyCode::Char('f') => {
+            if let Some(selected) = shared_state.list_state.selected() {
+                if let Some(entry) = shared_state.entries.get(selected) {
+                    if !shared_state.favorites.contains(entry) {
+                        shared_state.favorites.push(entry.clone());
+                    }
+                }
+            }
+        }
         KeyCode::Char('o') => {
             if let Some(selected) = shared_state.list_state.selected() {
                 if let Some(entry) = shared_state.entries.get(selected) {
