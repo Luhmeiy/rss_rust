@@ -1,0 +1,94 @@
+use crossterm::event::{KeyCode, KeyEvent};
+use ratatui::{
+    Frame,
+    layout::{HorizontalAlignment, Rect},
+    style::{Color, Modifier, Style},
+    symbols::border,
+    text::Line,
+    widgets::{Block, List, ListItem, Paragraph},
+};
+
+use crate::state::{SharedState, ViewMode};
+
+pub fn render(
+    frame: &mut Frame,
+    shared_state: &mut SharedState,
+    body_area: Rect,
+    search: &str,
+    is_active: bool,
+) {
+    let border_style = if is_active {
+        Style::default().fg(Color::Yellow)
+    } else {
+        Style::default()
+    };
+
+    let border = Block::bordered()
+        .title(" RSS Feed ")
+        .title_bottom(
+            " [↑/↓] Navigate  [Tab] Toggle Lists  [o] Open  [v] View  [/] Search  [q] Quit ",
+        )
+        .title_alignment(HorizontalAlignment::Center)
+        .border_set(border::THICK)
+        .border_style(border_style);
+
+    let items: Vec<ListItem> = shared_state
+        .entries
+        .iter()
+        .filter(|item| {
+            shared_state.selected_sources.contains(&item.source())
+                && (item.title().to_lowercase().contains(search)
+                    || item.summary().to_lowercase().contains(search))
+        })
+        .map(|item| {
+            let desc = item.summary();
+
+            let mut lines = vec![
+                Line::from(item.title()),
+                Line::from(format!("Source: {}", item.source())),
+                Line::from(format!("Date: {}", item.date())),
+            ];
+
+            if !desc.is_empty() {
+                lines.push(Line::from(desc));
+            }
+
+            lines.push(Line::from(""));
+            ListItem::new(lines)
+        })
+        .collect();
+
+    if items.is_empty() {
+        let empty_list = Paragraph::new(" No entries found.").block(border);
+        frame.render_widget(empty_list, body_area);
+    } else {
+        let list = List::new(items)
+            .block(border)
+            .highlight_style(
+                Style::default()
+                    .fg(Color::Blue)
+                    .add_modifier(Modifier::BOLD),
+            )
+            .highlight_symbol("> ");
+
+        frame.render_stateful_widget(list, body_area, &mut shared_state.list_state);
+    }
+}
+
+pub fn handle_key_event(key_event: KeyEvent, shared_state: &mut SharedState) {
+    match key_event.code {
+        KeyCode::Down => shared_state.list_state.select_next(),
+        KeyCode::Up => shared_state.list_state.select_previous(),
+        KeyCode::Char('v') => shared_state.view_mode = ViewMode::Content,
+        KeyCode::Char('o') => {
+            if let Some(selected) = shared_state.list_state.selected() {
+                if let Some(entry) = shared_state.entries.get(selected) {
+                    if let Some(link) = entry.entry.links.first() {
+                        let _ = open::that(&link.href);
+                    }
+                }
+            }
+        }
+        _ => {}
+    }
+}
