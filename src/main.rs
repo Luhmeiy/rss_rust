@@ -5,10 +5,9 @@ mod feed;
 mod state;
 mod ui;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> Result<(), Box<dyn Error>> {
     color_eyre::install()?;
-    let (sources, content) = feed::run().await?;
+    let (sources, content) = feed::run();
     ratatui::run(|terminal| ui::App::new(sources, content).run(terminal))?;
     Ok(())
 }

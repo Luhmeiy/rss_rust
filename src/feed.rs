@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::error::Error;
 use std::fs;
+use std::sync::mpsc;
 
 use feed_rs::model::Entry;
 use tokio::task::JoinSet;
@@ -69,7 +70,19 @@ async fn fetch_feed(url: String) -> Result<(String, Vec<Entry>), Box<dyn Error +
     Ok((title, feed.entries))
 }
 
-pub async fn run() -> Result<(Vec<String>, Vec<FeedEntry>), Box<dyn Error>> {
+pub fn run() -> (Vec<String>, Vec<FeedEntry>) {
+    let (tx, rx) = mpsc::channel();
+
+    std::thread::spawn(move || {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        let result = rt.block_on(async_run());
+        tx.send(result.expect("Failed to fetch feeds.")).unwrap();
+    });
+
+    rx.recv().unwrap()
+}
+
+async fn async_run() -> Result<(Vec<String>, Vec<FeedEntry>), Box<dyn Error>> {
     let urls = load_urls();
 
     let mut tasks = JoinSet::new();
