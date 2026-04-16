@@ -63,6 +63,7 @@ impl ListLayout {
         let entries = match self.lists_panel.get_list_state() {
             "All" => shared_state.entries.clone(),
             "Favorites" => shared_state.favorites.clone(),
+            "Bookmarks" => shared_state.bookmarks.clone(),
             _ => shared_state.entries.clone(),
         };
 

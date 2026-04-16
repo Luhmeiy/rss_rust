@@ -29,7 +29,7 @@ pub fn render(
 
     let border = Block::bordered()
         .title(" RSS Feed ")
-        .title_bottom(" [↑/↓] Nav  [Tab] Lists  [o] Open  [v] View  [f] Fav  [q] Quit ")
+        .title_bottom(" [↑/↓] Nav  [Tab] Lists  [o] Open  [v] View  [f] Fav  [b] Book  [q] Quit ")
         .title_alignment(HorizontalAlignment::Center)
         .border_set(border::THICK)
         .border_style(border_style);
@@ -43,12 +43,25 @@ pub fn render(
         })
         .map(|item| {
             let desc = item.summary();
-
             let title = item.title();
-            let formatted_title = if shared_state.favorites.contains(item) {
-                format!("[★] {}", title)
+
+            let fav_indicator = if shared_state.favorites.contains(item) {
+                "[★]"
             } else {
-                title
+                ""
+            };
+
+            let saved_indicator = if shared_state.bookmarks.contains(item) {
+                "[→]"
+            } else {
+                ""
+            };
+
+            let formatted_title = match (fav_indicator.is_empty(), saved_indicator.is_empty()) {
+                (false, false) => format!("{} {} {}", fav_indicator, saved_indicator, title),
+                (false, true) => format!("{} {}", fav_indicator, title),
+                (true, false) => format!("{} {}", saved_indicator, title),
+                (true, true) => title,
             };
 
             let mut lines = vec![
@@ -88,11 +101,24 @@ pub fn handle_key_event(key_event: KeyEvent, shared_state: &mut SharedState) {
         KeyCode::Down => shared_state.list_state.select_next(),
         KeyCode::Up => shared_state.list_state.select_previous(),
         KeyCode::Char('v') => shared_state.view_mode = ViewMode::Content,
+        KeyCode::Char('b') => {
+            if let Some(selected) = shared_state.list_state.selected() {
+                if let Some(entry) = shared_state.entries.get(selected) {
+                    if !shared_state.bookmarks.contains(entry) {
+                        shared_state.bookmarks.push(entry.clone());
+                    } else {
+                        shared_state.bookmarks.retain(|x| x != entry)
+                    }
+                }
+            }
+        }
         KeyCode::Char('f') => {
             if let Some(selected) = shared_state.list_state.selected() {
                 if let Some(entry) = shared_state.entries.get(selected) {
                     if !shared_state.favorites.contains(entry) {
                         shared_state.favorites.push(entry.clone());
+                    } else {
+                        shared_state.favorites.retain(|x| x != entry)
                     }
                 }
             }

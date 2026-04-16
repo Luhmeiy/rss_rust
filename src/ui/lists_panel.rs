@@ -20,7 +20,11 @@ impl ListsPanel {
         list_state.select(Some(0));
 
         ListsPanel {
-            lists: Vec::from(["All".to_string(), "Favorites".to_string()]),
+            lists: Vec::from([
+                "All".to_string(),
+                "Favorites".to_string(),
+                "Bookmarks".to_string(),
+            ]),
             list_state,
         }
     }
