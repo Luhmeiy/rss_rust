@@ -37,7 +37,7 @@ pub fn render(
     let items: Vec<ListItem> = entries
         .iter()
         .filter(|item| {
-            shared_state.selected_sources.contains(&item.source())
+            shared_state.selected_feeds.contains(&item.feed_url())
                 && (item.title().to_lowercase().contains(search)
                     || item.summary().to_lowercase().contains(search))
         })
@@ -66,7 +66,7 @@ pub fn render(
 
             let mut lines = vec![
                 Line::from(formatted_title),
-                Line::from(format!("Source: {}", item.source())),
+                Line::from(format!("Feed: {}", item.feed_url())),
                 Line::from(format!("Date: {}", item.date())),
             ];
 

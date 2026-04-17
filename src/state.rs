@@ -19,18 +19,18 @@ pub struct SharedState {
     pub exit: bool,
     pub show_feeds_popup: bool,
     pub show_new_feed_popup: bool,
-    pub sources: Vec<String>,
-    pub selected_sources: HashSet<String>,
+    pub feeds: Vec<String>,
+    pub selected_feeds: HashSet<String>,
 }
 
 impl SharedState {
-    pub fn new(entries: Vec<FeedEntry>, mut sources: Vec<String>) -> Self {
+    pub fn new(entries: Vec<FeedEntry>, mut feeds: Vec<String>) -> Self {
         let mut list_state = ListState::default();
         if !entries.is_empty() {
             list_state.select(Some(0));
         }
 
-        sources.sort();
+        feeds.sort();
 
         SharedState {
             entries,
@@ -41,8 +41,8 @@ impl SharedState {
             exit: false,
             show_feeds_popup: false,
             show_new_feed_popup: false,
-            sources: sources.clone(),
-            selected_sources: sources.into_iter().collect(),
+            feeds: feeds.clone(),
+            selected_feeds: feeds.into_iter().collect(),
         }
     }
 

@@ -10,13 +10,13 @@ use ratatui::{
 
 use crate::state::SharedState;
 
-pub struct SourcePopup {
+pub struct FeedPopup {
     list_state: ListState,
 }
 
-impl SourcePopup {
+impl FeedPopup {
     pub fn new() -> Self {
-        SourcePopup {
+        FeedPopup {
             list_state: ListState::default(),
         }
     }
@@ -25,14 +25,14 @@ impl SourcePopup {
         match self.list_state.selected() {
             Some(_) => {}
             None => {
-                if !shared_state.sources.is_empty() {
+                if !shared_state.feeds.is_empty() {
                     self.list_state.select(Some(0))
                 }
             }
         }
 
         let popup_block = Block::bordered()
-            .title(" Sources ")
+            .title(" Feeds ")
             .title_bottom(" [Esc/s] Back  [Space] Select/Deselect ")
             .title_alignment(HorizontalAlignment::Center)
             .on_black();
@@ -41,24 +41,24 @@ impl SourcePopup {
             .centered(Constraint::Percentage(60), Constraint::Percentage(20));
         frame.render_widget(Clear, centered_area);
 
-        if shared_state.sources.is_empty() {
-            let empty_list = Paragraph::new(" No sources found.").block(popup_block);
+        if shared_state.feeds.is_empty() {
+            let empty_list = Paragraph::new(" No feeds found.").block(popup_block);
             frame.render_widget(empty_list, centered_area);
         } else {
             let items: Vec<ListItem> = shared_state
-                .sources
+                .feeds
                 .iter()
-                .map(|source| {
-                    let is_selected = shared_state.selected_sources.contains(source);
+                .map(|feed| {
+                    let is_selected = shared_state.selected_feeds.contains(feed);
 
                     let marker: Line = if is_selected {
                         Line::from(vec![
                             Span::raw("●").green(),
                             Span::raw(" "),
-                            Span::raw(source),
+                            Span::raw(feed),
                         ])
                     } else {
-                        Line::from(vec![Span::raw("○"), Span::raw(" "), Span::raw(source)])
+                        Line::from(vec![Span::raw("○"), Span::raw(" "), Span::raw(feed)])
                     };
 
                     ListItem::new(marker)
@@ -83,11 +83,11 @@ impl SourcePopup {
             KeyCode::Up => self.list_state.select_previous(),
             KeyCode::Char(' ') => {
                 if let Some(selected) = self.list_state.selected() {
-                    if let Some(source) = shared_state.sources.get(selected) {
-                        if shared_state.selected_sources.contains(source) {
-                            shared_state.selected_sources.remove(source);
+                    if let Some(feed) = shared_state.feeds.get(selected) {
+                        if shared_state.selected_feeds.contains(feed) {
+                            shared_state.selected_feeds.remove(feed);
                         } else {
-                            shared_state.selected_sources.insert(source.clone());
+                            shared_state.selected_feeds.insert(feed.clone());
                         }
                     }
                 }
@@ -98,14 +98,14 @@ impl SourcePopup {
     }
 }
 
-pub fn render_source_button(frame: &mut Frame, source_area: Rect, show_popup: bool) {
+pub fn render_feed_button(frame: &mut Frame, feed_area: Rect, show_popup: bool) {
     let border = Block::bordered()
         .border_set(border::THICK)
         .style(match show_popup {
             true => Style::default().fg(Color::Yellow),
             false => Style::default(),
         });
-    let source = Paragraph::new("[s] Sources").block(border).centered();
+    let feed = Paragraph::new("[s] Feeds").block(border).centered();
 
-    frame.render_widget(source, source_area);
+    frame.render_widget(feed, feed_area);
 }

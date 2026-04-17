@@ -28,8 +28,8 @@ impl NewFeedPopup {
 
     pub fn render(&mut self, frame: &mut Frame) {
         let popup_block = Block::bordered()
-            .title(" Add Source ")
-            .title_bottom(" [Esc] Back  [Enter] Add Source ")
+            .title(" Add Feed ")
+            .title_bottom(" [Esc] Back  [Enter] Add Feed ")
             .title_alignment(HorizontalAlignment::Center)
             .on_black();
         let centered_area = frame
@@ -81,23 +81,23 @@ impl NewFeedPopup {
                     writeln!(file, "{feed}").unwrap();
                 }
 
-                let old_count = shared_state.sources.len();
-                let old_sources: HashSet<String> = shared_state.sources.iter().cloned().collect();
-                let (mut new_sources, new_entries) = feed::run();
+                let old_count = shared_state.feeds.len();
+                let old_feeds: HashSet<String> = shared_state.feeds.iter().cloned().collect();
+                let (mut new_feeds, new_entries) = feed::run();
 
-                new_sources.sort();
+                new_feeds.sort();
 
-                for source in &new_sources {
-                    if !old_sources.contains(source) {
-                        shared_state.selected_sources.insert(source.clone());
+                for feed in &new_feeds {
+                    if !old_feeds.contains(feed) {
+                        shared_state.selected_feeds.insert(feed.clone());
                     }
                 }
 
-                shared_state.sources = new_sources;
+                shared_state.feeds = new_feeds;
                 shared_state.entries = new_entries;
                 shared_state.list_state.select(Some(0));
 
-                let success = shared_state.sources.len() > old_count;
+                let success = shared_state.feeds.len() > old_count;
                 self.status = Some(success);
 
                 if success {

@@ -10,7 +10,7 @@ const MAX_ITEMS: usize = 20;
 
 #[derive(Clone, PartialEq)]
 pub struct FeedEntry {
-    pub source: String,
+    pub feed_url: String,
     pub entry: Entry,
 }
 
@@ -23,8 +23,8 @@ impl FeedEntry {
             .to_string()
     }
 
-    pub fn source(&self) -> String {
-        self.source.clone()
+    pub fn feed_url(&self) -> String {
+        self.feed_url.clone()
     }
 
     pub fn date(&self) -> String {
@@ -91,18 +91,18 @@ async fn async_run() -> Result<(Vec<String>, Vec<FeedEntry>), Box<dyn Error>> {
         tasks.spawn(fetch_feed(url));
     }
 
-    let mut sources: Vec<String> = Vec::new();
+    let mut feeds: Vec<String> = Vec::new();
     let mut all_entries: Vec<FeedEntry> = Vec::new();
     while let Some(result) = tasks.join_next().await {
         match result {
             Ok(Ok((source, entries))) => {
                 for (index, entry) in entries.iter().enumerate() {
                     if index == 0 {
-                        sources.push(source.clone());
+                        feeds.push(source.clone());
                     }
 
                     all_entries.push(FeedEntry {
-                        source: source.clone(),
+                        feed_url: source.clone(),
                         entry: entry.clone(),
                     });
                 }
@@ -143,5 +143,5 @@ async fn async_run() -> Result<(Vec<String>, Vec<FeedEntry>), Box<dyn Error>> {
         true
     });
 
-    Ok((sources, all_entries))
+    Ok((feeds, all_entries))
 }

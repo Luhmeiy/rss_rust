@@ -5,9 +5,7 @@ use ratatui::{
 
 use crate::{
     state::SharedState,
-    ui::{
-        new_feed_popup::render_new_feed_button, search::Search, source_popup::render_source_button,
-    },
+    ui::{feeds_popup::render_feed_button, new_feed_popup::render_new_feed_button, search::Search},
 };
 
 pub struct ListHeader {
@@ -28,9 +26,9 @@ impl ListHeader {
             Constraint::Fill(1),
         ])
         .spacing(1);
-        let [source_area, new_feed_area, search_bar_area] = header_area.layout(&layout);
+        let [feed_area, new_feed_area, search_bar_area] = header_area.layout(&layout);
 
-        render_source_button(frame, source_area, shared_state.show_feeds_popup);
+        render_feed_button(frame, feed_area, shared_state.show_feeds_popup);
         render_new_feed_button(frame, new_feed_area, shared_state.show_new_feed_popup);
         self.search.render(frame, search_bar_area);
     }

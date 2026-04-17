@@ -1,12 +1,12 @@
 pub mod content_view;
 pub mod feed_panel;
+pub mod feeds_popup;
 pub mod input;
 pub mod list_header;
 pub mod list_layout;
 pub mod lists_panel;
 pub mod new_feed_popup;
 pub mod search;
-pub mod source_popup;
 
 use std::io;
 
@@ -17,8 +17,8 @@ use crate::{
     feed::FeedEntry,
     state::{SharedState, ViewMode},
     ui::{
-        content_view::ContentView, list_layout::ListLayout, new_feed_popup::NewFeedPopup,
-        source_popup::SourcePopup,
+        content_view::ContentView, feeds_popup::FeedPopup, list_layout::ListLayout,
+        new_feed_popup::NewFeedPopup,
     },
 };
 
@@ -26,17 +26,17 @@ pub struct App {
     shared_state: SharedState,
     content_view: ContentView,
     list_layout: ListLayout,
-    source_popup: SourcePopup,
+    feeds_popup: FeedPopup,
     new_feed_popup: NewFeedPopup,
 }
 
 impl App {
-    pub fn new(sources: Vec<String>, entries: Vec<FeedEntry>) -> Self {
+    pub fn new(feeds: Vec<String>, entries: Vec<FeedEntry>) -> Self {
         App {
-            shared_state: SharedState::new(entries, sources),
+            shared_state: SharedState::new(entries, feeds),
             content_view: ContentView::new(),
             list_layout: ListLayout::new(),
-            source_popup: SourcePopup::new(),
+            feeds_popup: FeedPopup::new(),
             new_feed_popup: NewFeedPopup::new(),
         }
     }
@@ -56,7 +56,7 @@ impl App {
         }
 
         if self.shared_state.show_feeds_popup {
-            self.source_popup.render(frame, &self.shared_state);
+            self.feeds_popup.render(frame, &self.shared_state);
         }
 
         if self.shared_state.show_new_feed_popup {
@@ -73,7 +73,7 @@ impl App {
                         .search
                         .handle_key_event(key_event);
                 } else if self.shared_state.show_feeds_popup {
-                    self.source_popup
+                    self.feeds_popup
                         .handle_key_event(key_event, &mut self.shared_state);
                 } else if self.shared_state.show_new_feed_popup {
                     self.new_feed_popup
