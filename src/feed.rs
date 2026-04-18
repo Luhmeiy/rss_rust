@@ -8,9 +8,15 @@ use tokio::task::JoinSet;
 
 const MAX_ITEMS: usize = 20;
 
+#[derive(Clone, Ord, PartialOrd, Eq, PartialEq)]
+pub struct Feed {
+    pub title: String,
+    pub url: String,
+}
+
 #[derive(Clone, PartialEq)]
 pub struct FeedEntry {
-    pub feed_url: String,
+    pub feed: String,
     pub entry: Entry,
 }
 
@@ -23,8 +29,8 @@ impl FeedEntry {
             .to_string()
     }
 
-    pub fn feed_url(&self) -> String {
-        self.feed_url.clone()
+    pub fn feed(&self) -> String {
+        self.feed.clone()
     }
 
     pub fn date(&self) -> String {
@@ -59,7 +65,7 @@ fn load_urls() -> Vec<String> {
         .collect()
 }
 
-async fn fetch_feed(url: String) -> Result<(String, Vec<Entry>), Box<dyn Error + Send + Sync>> {
+async fn fetch_feed(url: String) -> Result<(Feed, Vec<Entry>), Box<dyn Error + Send + Sync>> {
     let content = reqwest::get(&url).await?.bytes().await?;
     let feed = feed_rs::parser::parse(&content[..])?;
     let title = feed
@@ -68,10 +74,10 @@ async fn fetch_feed(url: String) -> Result<(String, Vec<Entry>), Box<dyn Error +
         .map_or("Unknown Feed", |t| &t.content)
         .to_string();
 
-    Ok((title, feed.entries))
+    Ok((Feed { title, url }, feed.entries))
 }
 
-pub fn run() -> (Vec<String>, Vec<FeedEntry>) {
+pub fn run() -> (Vec<Feed>, Vec<FeedEntry>) {
     let (tx, rx) = mpsc::channel();
 
     std::thread::spawn(move || {
@@ -83,7 +89,7 @@ pub fn run() -> (Vec<String>, Vec<FeedEntry>) {
     rx.recv().unwrap()
 }
 
-async fn async_run() -> Result<(Vec<String>, Vec<FeedEntry>), Box<dyn Error>> {
+async fn async_run() -> Result<(Vec<Feed>, Vec<FeedEntry>), Box<dyn Error>> {
     let urls = load_urls();
 
     let mut tasks = JoinSet::new();
@@ -91,18 +97,17 @@ async fn async_run() -> Result<(Vec<String>, Vec<FeedEntry>), Box<dyn Error>> {
         tasks.spawn(fetch_feed(url));
     }
 
-    let mut feeds: Vec<String> = Vec::new();
+    let mut feeds: Vec<Feed> = Vec::new();
     let mut all_entries: Vec<FeedEntry> = Vec::new();
+
     while let Some(result) = tasks.join_next().await {
         match result {
-            Ok(Ok((source, entries))) => {
-                for (index, entry) in entries.iter().enumerate() {
-                    if index == 0 {
-                        feeds.push(source.clone());
-                    }
+            Ok(Ok((feed, entries))) => {
+                feeds.push(feed.clone());
 
+                for entry in entries.iter() {
                     all_entries.push(FeedEntry {
-                        feed_url: source.clone(),
+                        feed: feed.title.clone(),
                         entry: entry.clone(),
                     });
                 }

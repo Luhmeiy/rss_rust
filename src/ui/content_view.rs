@@ -18,11 +18,11 @@ impl ContentView {
     }
 
     pub fn render(&self, frame: &mut Frame, shared_state: &mut SharedState) {
-        let (title, feed_url, date, content_text) = shared_state
+        let (title, feed, date, content_text) = shared_state
             .list_state
             .selected()
             .and_then(|s| shared_state.entries.get(s))
-            .map(|e| (e.title(), e.feed_url(), e.date(), e.content()))
+            .map(|e| (e.title(), e.feed(), e.date(), e.content()))
             .or_else(|| {
                 Some((
                     String::from("No title"),
@@ -48,7 +48,7 @@ impl ContentView {
             .flex(Flex::Center);
         let [header_area, body_area] = outer_area.layout(&layout);
 
-        let metadata_text = format!(" {} | {} ", feed_url, date);
+        let metadata_text = format!(" {} | {} ", feed, date);
         let metadata_text_length = metadata_text.len() as u16;
         let metadata = Paragraph::new(metadata_text)
             .block(Block::bordered())

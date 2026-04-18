@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use ratatui::widgets::ListState;
 
-use crate::feed::FeedEntry;
+use crate::feed::{Feed, FeedEntry};
 
 #[derive(PartialEq)]
 pub enum ViewMode {
@@ -19,18 +19,16 @@ pub struct SharedState {
     pub exit: bool,
     pub show_feeds_popup: bool,
     pub show_new_feed_popup: bool,
-    pub feeds: Vec<String>,
+    pub feeds: Vec<Feed>,
     pub selected_feeds: HashSet<String>,
 }
 
 impl SharedState {
-    pub fn new(entries: Vec<FeedEntry>, mut feeds: Vec<String>) -> Self {
+    pub fn new(entries: Vec<FeedEntry>, feeds: Vec<Feed>) -> Self {
         let mut list_state = ListState::default();
         if !entries.is_empty() {
             list_state.select(Some(0));
         }
-
-        feeds.sort();
 
         SharedState {
             entries,
@@ -42,7 +40,7 @@ impl SharedState {
             show_feeds_popup: false,
             show_new_feed_popup: false,
             feeds: feeds.clone(),
-            selected_feeds: feeds.into_iter().collect(),
+            selected_feeds: feeds.into_iter().map(|f| f.title).collect(),
         }
     }
 

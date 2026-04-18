@@ -21,7 +21,7 @@ impl ListHeader {
 
     pub fn render(&self, frame: &mut Frame, header_area: Rect, shared_state: &SharedState) {
         let layout = Layout::horizontal([
-            Constraint::Length(15),
+            Constraint::Length(13),
             Constraint::Length(16),
             Constraint::Fill(1),
         ])

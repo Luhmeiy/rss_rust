@@ -14,7 +14,7 @@ use crossterm::event::{self, Event, KeyEventKind};
 use ratatui::{DefaultTerminal, Frame};
 
 use crate::{
-    feed::FeedEntry,
+    feed::{Feed, FeedEntry},
     state::{SharedState, ViewMode},
     ui::{
         content_view::ContentView, feeds_popup::FeedPopup, list_layout::ListLayout,
@@ -31,7 +31,7 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(feeds: Vec<String>, entries: Vec<FeedEntry>) -> Self {
+    pub fn new(feeds: Vec<Feed>, entries: Vec<FeedEntry>) -> Self {
         App {
             shared_state: SharedState::new(entries, feeds),
             content_view: ContentView::new(),

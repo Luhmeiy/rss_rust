@@ -82,14 +82,15 @@ impl NewFeedPopup {
                 }
 
                 let old_count = shared_state.feeds.len();
-                let old_feeds: HashSet<String> = shared_state.feeds.iter().cloned().collect();
+                let old_feed_titles: HashSet<String> =
+                    shared_state.feeds.iter().map(|f| f.title.clone()).collect();
                 let (mut new_feeds, new_entries) = feed::run();
 
                 new_feeds.sort();
 
                 for feed in &new_feeds {
-                    if !old_feeds.contains(feed) {
-                        shared_state.selected_feeds.insert(feed.clone());
+                    if !old_feed_titles.contains(&feed.title) {
+                        shared_state.selected_feeds.insert(feed.title.clone());
                     }
                 }
 
