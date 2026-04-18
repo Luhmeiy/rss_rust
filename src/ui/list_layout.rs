@@ -6,7 +6,7 @@ use ratatui::{
 
 use crate::{
     state::SharedState,
-    ui::{feed_panel, list_header::ListHeader, lists_panel::ListsPanel},
+    ui::{feed_panel, list_header::ListHeader, lists_panel::ListsPanel, new_list_popup},
 };
 
 #[derive(PartialEq)]
@@ -41,7 +41,8 @@ impl ListLayout {
         let search = self.list_header.get_search();
         let panels_focused = !self.list_header.is_search()
             && !shared_state.show_feeds_popup
-            && !shared_state.show_new_feed_popup;
+            && !shared_state.show_new_feed_popup
+            && !shared_state.show_new_list_popup;
 
         let display_area: Rect;
 
@@ -51,10 +52,21 @@ impl ListLayout {
             let [lists_area, display_area_layout] = body_area.layout(&body_layout);
 
             display_area = display_area_layout;
+
+            let lists_content_layout =
+                Layout::vertical([Constraint::Fill(1), Constraint::Length(3)]);
+            let [lists_items_area, button_area] = lists_area.layout(&lists_content_layout);
+
             self.lists_panel.render(
                 frame,
-                lists_area,
+                lists_items_area,
                 self.cursor_position == CursorPosition::Lists && panels_focused,
+            );
+
+            new_list_popup::render_new_list_button(
+                frame,
+                button_area,
+                shared_state.show_new_list_popup,
             );
         } else {
             display_area = body_area;
@@ -112,9 +124,11 @@ impl ListLayout {
             KeyCode::Char('q') => shared_state.exit = true,
             _ => match self.cursor_position {
                 CursorPosition::Feed => feed_panel::handle_key_event(key_event, shared_state),
-                CursorPosition::Lists => self
-                    .lists_panel
-                    .handle_key_event(key_event, &mut self.cursor_position),
+                CursorPosition::Lists => self.lists_panel.handle_key_event(
+                    key_event,
+                    &mut self.cursor_position,
+                    shared_state,
+                ),
             },
         }
     }

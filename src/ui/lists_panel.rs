@@ -7,7 +7,7 @@ use ratatui::{
     widgets::{Block, List, ListState},
 };
 
-use crate::ui::list_layout::CursorPosition;
+use crate::{state::SharedState, ui::list_layout::CursorPosition};
 
 pub struct ListsPanel {
     lists: Vec<String>,
@@ -53,11 +53,17 @@ impl ListsPanel {
         frame.render_stateful_widget(list, lists_area, &mut self.list_state);
     }
 
-    pub fn handle_key_event(&mut self, key_event: KeyEvent, cursor_position: &mut CursorPosition) {
+    pub fn handle_key_event(
+        &mut self,
+        key_event: KeyEvent,
+        cursor_position: &mut CursorPosition,
+        shared_state: &mut SharedState,
+    ) {
         match key_event.code {
             KeyCode::Down => self.list_state.select_next(),
             KeyCode::Up => self.list_state.select_previous(),
             KeyCode::Enter => *cursor_position = CursorPosition::Feed,
+            KeyCode::Char('n') => shared_state.toggle_show_new_list_popup(),
             _ => {}
         }
     }
