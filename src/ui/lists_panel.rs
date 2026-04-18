@@ -7,10 +7,10 @@ use ratatui::{
     widgets::{Block, List, ListState},
 };
 
-use crate::{state::SharedState, ui::list_layout::CursorPosition};
+use crate::state::SharedState;
+use crate::ui::list_layout::CursorPosition;
 
 pub struct ListsPanel {
-    lists: Vec<String>,
     list_state: ListState,
 }
 
@@ -19,17 +19,16 @@ impl ListsPanel {
         let mut list_state = ListState::default();
         list_state.select(Some(0));
 
-        ListsPanel {
-            lists: Vec::from([
-                "All".to_string(),
-                "Favorites".to_string(),
-                "Bookmarks".to_string(),
-            ]),
-            list_state,
-        }
+        ListsPanel { list_state }
     }
 
-    pub fn render(&mut self, frame: &mut Frame, lists_area: Rect, is_active: bool) {
+    pub fn render(
+        &mut self,
+        frame: &mut Frame,
+        lists: &[String],
+        lists_area: Rect,
+        is_active: bool,
+    ) {
         let border_style = if is_active {
             Style::default().fg(Color::Yellow)
         } else {
@@ -41,7 +40,7 @@ impl ListsPanel {
             .border_set(border::THICK)
             .border_style(border_style);
 
-        let list = List::new(self.lists.clone())
+        let list = List::new(lists.to_vec())
             .block(border)
             .highlight_style(
                 Style::default()
@@ -68,8 +67,8 @@ impl ListsPanel {
         }
     }
 
-    pub fn get_list_state(&self) -> &str {
+    pub fn get_list_state<'a>(&self, lists: &'a [String]) -> &'a str {
         let index = self.list_state.selected().unwrap();
-        &self.lists[index]
+        &lists[index]
     }
 }

@@ -42,7 +42,8 @@ impl ListLayout {
         let panels_focused = !self.list_header.is_search()
             && !shared_state.show_feeds_popup
             && !shared_state.show_new_feed_popup
-            && !shared_state.show_new_list_popup;
+            && !shared_state.show_new_list_popup
+            && !shared_state.show_list_selector;
 
         let display_area: Rect;
 
@@ -59,6 +60,7 @@ impl ListLayout {
 
             self.lists_panel.render(
                 frame,
+                &shared_state.lists,
                 lists_items_area,
                 self.cursor_position == CursorPosition::Lists && panels_focused,
             );
@@ -72,11 +74,15 @@ impl ListLayout {
             display_area = body_area;
         }
 
-        let entries = match self.lists_panel.get_list_state() {
+        let entries = match self.lists_panel.get_list_state(&shared_state.lists) {
             "All" => shared_state.entries.clone(),
             "Favorites" => shared_state.favorites.clone(),
             "Bookmarks" => shared_state.bookmarks.clone(),
-            _ => shared_state.entries.clone(),
+            list_name => shared_state
+                .custom_lists
+                .get(list_name)
+                .cloned()
+                .unwrap_or_default(),
         };
 
         feed_panel::render(

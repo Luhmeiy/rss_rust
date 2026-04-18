@@ -29,7 +29,7 @@ pub fn render(
 
     let border = Block::bordered()
         .title(" RSS Feed ")
-        .title_bottom(" [↑/↓] Nav  [Tab] Lists  [o] Open  [v] View  [f] Fav  [b] Book  [q] Quit ")
+        .title_bottom(" [↑/↓] Nav  [Tab] Lists  [o] Open  [v] View  [f] Fav  [b] Book  [l] Add to List  [q] Quit ")
         .title_alignment(HorizontalAlignment::Center)
         .border_set(border::THICK)
         .border_style(border_style);
@@ -101,6 +101,15 @@ pub fn handle_key_event(key_event: KeyEvent, shared_state: &mut SharedState) {
         KeyCode::Down => shared_state.list_state.select_next(),
         KeyCode::Up => shared_state.list_state.select_previous(),
         KeyCode::Char('v') => shared_state.view_mode = ViewMode::Content,
+        KeyCode::Char('l') => {
+            if let Some(selected) = shared_state.list_state.selected() {
+                if let Some(entry) = shared_state.entries.get(selected) {
+                    shared_state.selected_entry = Some(entry.clone());
+                }
+            }
+
+            shared_state.toggle_show_list_selector();
+        }
         KeyCode::Char('b') => {
             if let Some(selected) = shared_state.list_state.selected() {
                 if let Some(entry) = shared_state.entries.get(selected) {

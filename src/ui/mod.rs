@@ -1,3 +1,4 @@
+pub mod add_to_list_popup;
 pub mod content_view;
 pub mod feed_panel;
 pub mod feeds_popup;
@@ -19,8 +20,9 @@ use crate::{
     feed::{Feed, FeedEntry},
     state::{SharedState, ViewMode},
     ui::{
-        content_view::ContentView, feeds_popup::FeedPopup, list_layout::ListLayout,
-        new_feed_popup::NewFeedPopup, new_list_popup::NewListPopup, popup::Popup,
+        add_to_list_popup::AddToListPopup, content_view::ContentView, feeds_popup::FeedPopup,
+        list_layout::ListLayout, new_feed_popup::NewFeedPopup, new_list_popup::NewListPopup,
+        popup::Popup,
     },
 };
 
@@ -31,6 +33,7 @@ pub struct App {
     feeds_popup: FeedPopup,
     new_feed_popup: NewFeedPopup,
     new_list_popup: NewListPopup,
+    add_to_list_popup: AddToListPopup,
 }
 
 impl App {
@@ -42,6 +45,7 @@ impl App {
             feeds_popup: FeedPopup::new(),
             new_feed_popup: NewFeedPopup::new(),
             new_list_popup: NewListPopup::new(),
+            add_to_list_popup: AddToListPopup::new(),
         }
     }
 
@@ -70,6 +74,10 @@ impl App {
         if self.shared_state.show_new_list_popup {
             self.new_list_popup.render(frame);
         }
+
+        if self.shared_state.show_list_selector {
+            self.add_to_list_popup.render(frame, &mut self.shared_state);
+        }
     }
 
     fn handle_events(&mut self) -> io::Result<()> {
@@ -88,6 +96,9 @@ impl App {
                         .handle_key_event(key_event, &mut self.shared_state);
                 } else if self.shared_state.show_new_list_popup {
                     self.new_list_popup
+                        .handle_key_event(key_event, &mut self.shared_state);
+                } else if self.shared_state.show_list_selector {
+                    self.add_to_list_popup
                         .handle_key_event(key_event, &mut self.shared_state);
                 } else {
                     match self.shared_state.view_mode {

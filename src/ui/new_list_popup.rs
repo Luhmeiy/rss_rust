@@ -20,7 +20,9 @@ impl Popup for NewListPopup {
         &mut self.state
     }
 
-    fn on_enter(&mut self, _shared_state: &mut SharedState) {
+    fn on_enter(&mut self, shared_state: &mut SharedState) {
+        let list_name = self.state.get_input().get_field().to_string();
+        shared_state.add_list(list_name);
         *self.state.get_status() = Some(true);
         self.state.get_input().reset();
     }
