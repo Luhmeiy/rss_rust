@@ -8,7 +8,7 @@ use ratatui::{
     widgets::{Block, Clear, List, ListItem, ListState, Paragraph},
 };
 
-use crate::state::SharedState;
+use crate::{feed, state::SharedState};
 
 pub struct FeedPopup {
     list_state: ListState,
@@ -33,7 +33,7 @@ impl FeedPopup {
 
         let popup_block = Block::bordered()
             .title(" Feeds ")
-            .title_bottom(" [Esc/s] Back  [Space] Select/Deselect ")
+            .title_bottom(" [Esc/s] Back  [Space] Select/Deselect [d] Delete ")
             .title_alignment(HorizontalAlignment::Center)
             .on_black();
         let centered_area = frame
@@ -49,16 +49,20 @@ impl FeedPopup {
                 .feeds
                 .iter()
                 .map(|feed| {
-                    let is_selected = shared_state.selected_feeds.contains(feed);
+                    let is_selected = shared_state.selected_feeds.contains(&feed.title);
 
                     let marker: Line = if is_selected {
                         Line::from(vec![
                             Span::raw("●").green(),
                             Span::raw(" "),
-                            Span::raw(feed),
+                            Span::raw(feed.title.clone()),
                         ])
                     } else {
-                        Line::from(vec![Span::raw("○"), Span::raw(" "), Span::raw(feed)])
+                        Line::from(vec![
+                            Span::raw("○"),
+                            Span::raw(" "),
+                            Span::raw(feed.title.clone()),
+                        ])
                     };
 
                     ListItem::new(marker)
@@ -84,11 +88,35 @@ impl FeedPopup {
             KeyCode::Char(' ') => {
                 if let Some(selected) = self.list_state.selected() {
                     if let Some(feed) = shared_state.feeds.get(selected) {
-                        if shared_state.selected_feeds.contains(feed) {
-                            shared_state.selected_feeds.remove(feed);
+                        if shared_state.selected_feeds.contains(&feed.title) {
+                            shared_state.selected_feeds.remove(&feed.title);
                         } else {
-                            shared_state.selected_feeds.insert(feed.clone());
+                            shared_state.selected_feeds.insert(feed.title.clone());
                         }
+                    }
+                }
+            }
+            KeyCode::Char('d') => {
+                if let Some(selected) = self.list_state.selected() {
+                    let feed_to_delete = shared_state.feeds.get(selected).cloned();
+
+                    if let Some(feed_to_delete) = feed_to_delete {
+                        {
+                            let content = std::fs::read_to_string("feeds.txt").unwrap();
+                            let new_content: Vec<&str> = content
+                                .lines()
+                                .filter(|line| !line.contains(&feed_to_delete.url))
+                                .collect();
+                            std::fs::write("feeds.txt", new_content.join("\n")).unwrap();
+                        }
+
+                        let (mut new_feeds, new_entries) = feed::run();
+                        new_feeds.sort();
+
+                        shared_state.feeds = new_feeds;
+                        shared_state.entries = new_entries;
+                        shared_state.selected_feeds.remove(&feed_to_delete.title);
+                        shared_state.list_state.select(Some(0));
                     }
                 }
             }
