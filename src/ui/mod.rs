@@ -5,6 +5,7 @@ pub mod feeds_popup;
 pub mod input;
 pub mod list_header;
 pub mod list_layout;
+pub mod list_popup;
 pub mod lists_panel;
 pub mod new_feed_popup;
 pub mod new_list_popup;
@@ -21,8 +22,8 @@ use crate::{
     state::{SharedState, ViewMode},
     ui::{
         add_to_list_popup::AddToListPopup, content_view::ContentView, feeds_popup::FeedPopup,
-        list_layout::ListLayout, new_feed_popup::NewFeedPopup, new_list_popup::NewListPopup,
-        popup::Popup,
+        list_layout::ListLayout, list_popup::ListPopup, new_feed_popup::NewFeedPopup,
+        new_list_popup::NewListPopup, popup::Popup,
     },
 };
 

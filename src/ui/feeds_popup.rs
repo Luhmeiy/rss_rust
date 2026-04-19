@@ -1,92 +1,48 @@
 use crossterm::event::{KeyCode, KeyEvent};
-use ratatui::{
-    Frame,
-    layout::{Constraint, HorizontalAlignment, Rect},
-    style::{Color, Modifier, Style, Stylize},
-    symbols::border,
-    text::{Line, Span},
-    widgets::{Block, Clear, List, ListItem, ListState, Paragraph},
+use ratatui::{Frame, layout::Rect, widgets::ListItem};
+
+use crate::{
+    feed,
+    state::SharedState,
+    ui::list_popup::{ListPopup, ListPopupState},
 };
 
-use crate::{feed, state::SharedState};
-
 pub struct FeedPopup {
-    list_state: ListState,
+    state: ListPopupState,
 }
 
 impl FeedPopup {
     pub fn new() -> Self {
         FeedPopup {
-            list_state: ListState::default(),
+            state: ListPopupState::new("Feeds", Some("[d] Delete ".to_string()), "No feeds found."),
         }
     }
+}
 
-    pub fn render(&mut self, frame: &mut Frame, shared_state: &SharedState) {
-        match self.list_state.selected() {
-            Some(_) => {}
-            None => {
-                if !shared_state.feeds.is_empty() {
-                    self.list_state.select(Some(0))
-                }
-            }
-        }
-
-        let popup_block = Block::bordered()
-            .title(" Feeds ")
-            .title_bottom(" [Esc/s] Back  [Space] Select/Deselect [d] Delete ")
-            .title_alignment(HorizontalAlignment::Center)
-            .on_black();
-        let centered_area = frame
-            .area()
-            .centered(Constraint::Percentage(60), Constraint::Percentage(20));
-        frame.render_widget(Clear, centered_area);
-
-        if shared_state.feeds.is_empty() {
-            let empty_list = Paragraph::new(" No feeds found.").block(popup_block);
-            frame.render_widget(empty_list, centered_area);
-        } else {
-            let items: Vec<ListItem> = shared_state
-                .feeds
-                .iter()
-                .map(|feed| {
-                    let is_selected = shared_state.selected_feeds.contains(&feed.title);
-
-                    let marker: Line = if is_selected {
-                        Line::from(vec![
-                            Span::raw("●").green(),
-                            Span::raw(" "),
-                            Span::raw(feed.title.clone()),
-                        ])
-                    } else {
-                        Line::from(vec![
-                            Span::raw("○"),
-                            Span::raw(" "),
-                            Span::raw(feed.title.clone()),
-                        ])
-                    };
-
-                    ListItem::new(marker)
-                })
-                .collect();
-
-            let list = List::new(items)
-                .block(popup_block)
-                .highlight_style(
-                    Style::default()
-                        .fg(Color::Blue)
-                        .add_modifier(Modifier::BOLD),
-                )
-                .highlight_symbol("> ");
-            frame.render_stateful_widget(list, centered_area, &mut self.list_state);
-        }
+impl ListPopup for FeedPopup {
+    fn get_state(&mut self) -> &mut ListPopupState {
+        &mut self.state
     }
 
-    pub fn handle_key_event(&mut self, key_event: KeyEvent, shared_state: &mut SharedState) {
+    fn render_list(shared_state: &SharedState) -> Vec<ListItem<'_>> {
+        shared_state
+            .feeds
+            .iter()
+            .map(|feed| {
+                let is_selected = shared_state.selected_feeds.contains(&feed.title);
+                Self::render_list_item(is_selected, feed.title.clone())
+            })
+            .collect()
+    }
+
+    fn handle_key_event(&mut self, key_event: KeyEvent, shared_state: &mut SharedState) {
+        let list_state = self.state.get_list_state();
+
         match key_event.code {
-            KeyCode::Down => self.list_state.select_next(),
-            KeyCode::Up => self.list_state.select_previous(),
+            KeyCode::Down => list_state.select_next(),
+            KeyCode::Up => list_state.select_previous(),
             KeyCode::Char(' ') => {
-                if let Some(selected) = self.list_state.selected() {
+                if let Some(selected) = list_state.selected() {
                     if let Some(feed) = shared_state.feeds.get(selected) {
                         if shared_state.selected_feeds.contains(&feed.title) {
                             shared_state.selected_feeds.remove(&feed.title);
@@ -97,7 +53,7 @@ impl FeedPopup {
                 }
             }
             KeyCode::Char('d') => {
-                if let Some(selected) = self.list_state.selected() {
+                if let Some(selected) = list_state.selected() {
                     let feed_to_delete = shared_state.feeds.get(selected).cloned();
 
                     if let Some(feed_to_delete) = feed_to_delete {
@@ -126,14 +82,6 @@ impl FeedPopup {
     }
 }
 
-pub fn render_feed_button(frame: &mut Frame, feed_area: Rect, show_popup: bool) {
-    let border = Block::bordered()
-        .border_set(border::THICK)
-        .style(match show_popup {
-            true => Style::default().fg(Color::Yellow),
-            false => Style::default(),
-        });
-    let feed = Paragraph::new("[s] Feeds").block(border).centered();
-
-    frame.render_widget(feed, feed_area);
+pub fn render_feed_button(frame: &mut Frame, button_area: Rect, show_popup: bool) {
+    crate::ui::popup::render_button(frame, button_area, show_popup, "[s] Feeds".to_string());
 }
