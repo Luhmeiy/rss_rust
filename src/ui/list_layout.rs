@@ -49,7 +49,7 @@ impl ListLayout {
 
         if self.show_lists_panel {
             let body_layout =
-                Layout::horizontal([Constraint::Fill(1), Constraint::Fill(3)]).spacing(1);
+                Layout::horizontal([Constraint::Length(30), Constraint::Fill(3)]).spacing(1);
             let [lists_area, display_area_layout] = body_area.layout(&body_layout);
 
             display_area = display_area_layout;

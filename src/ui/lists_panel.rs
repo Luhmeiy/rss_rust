@@ -4,6 +4,7 @@ use ratatui::{
     layout::Rect,
     style::{Color, Modifier, Style},
     symbols::border,
+    text::Line,
     widgets::{Block, List, ListState},
 };
 
@@ -37,6 +38,7 @@ impl ListsPanel {
 
         let border = Block::bordered()
             .title(" Lists ")
+            .title_bottom(Line::from(" [↑/↓] Nav  [d] Delete ").centered())
             .border_set(border::THICK)
             .border_style(border_style);
 
@@ -63,6 +65,16 @@ impl ListsPanel {
             KeyCode::Up => self.list_state.select_previous(),
             KeyCode::Enter => *cursor_position = CursorPosition::Feed,
             KeyCode::Char('n') => shared_state.toggle_show_new_list_popup(),
+            KeyCode::Char('d') => {
+                if let Some(selected) = self.list_state.selected() {
+                    if let Some(entry) = shared_state.lists.get(selected) {
+                        if shared_state.custom_lists.contains_key(entry) {
+                            shared_state.custom_lists.remove(entry);
+                            shared_state.lists.remove(selected);
+                        }
+                    }
+                }
+            }
             _ => {}
         }
     }
