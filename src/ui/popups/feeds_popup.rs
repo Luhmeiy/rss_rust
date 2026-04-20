@@ -2,9 +2,12 @@ use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{Frame, layout::Rect, widgets::ListItem};
 
 use crate::{
-    feed,
-    state::SharedState,
-    ui::list_popup::{ListPopup, ListPopupState},
+    fetch,
+    state::{data::DataState, ui::UIState},
+    ui::{
+        components::popup::render_button,
+        popups::list_popup::{ListPopup, ListPopupState},
+    },
 };
 
 pub struct FeedPopup {
@@ -24,18 +27,17 @@ impl ListPopup for FeedPopup {
         &mut self.state
     }
 
-    fn render_list(shared_state: &SharedState) -> Vec<ListItem<'_>> {
-        shared_state
-            .feeds
+    fn render_list(data: &DataState) -> Vec<ListItem<'_>> {
+        data.feeds
             .iter()
             .map(|feed| {
-                let is_selected = shared_state.selected_feeds.contains(&feed.title);
+                let is_selected = data.selected_feeds.contains(&feed.title);
                 Self::render_list_item(is_selected, feed.title.clone())
             })
             .collect()
     }
 
-    fn handle_key_event(&mut self, key_event: KeyEvent, shared_state: &mut SharedState) {
+    fn handle_key_event(&mut self, key_event: KeyEvent, data: &mut DataState, ui: &mut UIState) {
         let list_state = self.state.get_list_state();
 
         match key_event.code {
@@ -43,18 +45,18 @@ impl ListPopup for FeedPopup {
             KeyCode::Up => list_state.select_previous(),
             KeyCode::Char(' ') => {
                 if let Some(selected) = list_state.selected() {
-                    if let Some(feed) = shared_state.feeds.get(selected) {
-                        if shared_state.selected_feeds.contains(&feed.title) {
-                            shared_state.selected_feeds.remove(&feed.title);
+                    if let Some(feed) = data.feeds.get(selected) {
+                        if data.selected_feeds.contains(&feed.title) {
+                            data.selected_feeds.remove(&feed.title);
                         } else {
-                            shared_state.selected_feeds.insert(feed.title.clone());
+                            data.selected_feeds.insert(feed.title.clone());
                         }
                     }
                 }
             }
             KeyCode::Char('d') => {
                 if let Some(selected) = list_state.selected() {
-                    let feed_to_delete = shared_state.feeds.get(selected).cloned();
+                    let feed_to_delete = data.feeds.get(selected).cloned();
 
                     if let Some(feed_to_delete) = feed_to_delete {
                         {
@@ -66,22 +68,22 @@ impl ListPopup for FeedPopup {
                             std::fs::write("feeds.txt", new_content.join("\n")).unwrap();
                         }
 
-                        let (mut new_feeds, new_entries) = feed::run();
+                        let (mut new_feeds, new_entries) = fetch::loader::run();
                         new_feeds.sort();
 
-                        shared_state.feeds = new_feeds;
-                        shared_state.entries = new_entries;
-                        shared_state.selected_feeds.remove(&feed_to_delete.title);
-                        shared_state.list_state.select(Some(0));
+                        data.feeds = new_feeds;
+                        data.entries = new_entries;
+                        data.selected_feeds.remove(&feed_to_delete.title);
+                        ui.list_state.select(Some(0));
                     }
                 }
             }
-            KeyCode::Char('s') | KeyCode::Esc => shared_state.toggle_show_feeds_popup(),
+            KeyCode::Char('s') | KeyCode::Esc => ui.toggle_show_feeds_popup(),
             _ => {}
         }
     }
 }
 
 pub fn render_feed_button(frame: &mut Frame, button_area: Rect, show_popup: bool) {
-    crate::ui::popup::render_button(frame, button_area, show_popup, "[s] Feeds".to_string());
+    render_button(frame, button_area, show_popup, "[s] Feeds".to_string());
 }

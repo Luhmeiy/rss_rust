@@ -5,8 +5,12 @@ use ratatui::{
 };
 
 use crate::{
-    state::SharedState,
-    ui::{feed_panel, list_header::ListHeader, lists_panel::ListsPanel, new_list_popup},
+    state::{data::DataState, ui::UIState},
+    ui::{
+        components::list_header::ListHeader,
+        panels::{feed_panel, lists_panel::ListsPanel},
+        popups::new_list_popup,
+    },
 };
 
 #[derive(PartialEq)]
@@ -32,18 +36,18 @@ impl ListLayout {
         }
     }
 
-    pub fn render(&mut self, frame: &mut Frame, shared_state: &mut SharedState) {
+    pub fn render(&mut self, frame: &mut Frame, data: &mut DataState, ui: &mut UIState) {
         let layout = Layout::vertical([Constraint::Length(3), Constraint::Fill(1)]).margin(1);
         let [header_area, body_area] = frame.area().layout(&layout);
 
-        self.list_header.render(frame, header_area, shared_state);
+        self.list_header.render(frame, header_area, ui);
 
         let search = self.list_header.get_search();
         let panels_focused = !self.list_header.is_search()
-            && !shared_state.show_feeds_popup
-            && !shared_state.show_new_feed_popup
-            && !shared_state.show_new_list_popup
-            && !shared_state.show_list_selector;
+            && !ui.show_feeds_popup
+            && !ui.show_new_feed_popup
+            && !ui.show_new_list_popup
+            && !ui.show_list_selector;
 
         let display_area: Rect;
 
@@ -60,25 +64,21 @@ impl ListLayout {
 
             self.lists_panel.render(
                 frame,
-                &shared_state.lists,
+                &data.lists,
                 lists_items_area,
                 self.cursor_position == CursorPosition::Lists && panels_focused,
             );
 
-            new_list_popup::render_new_list_button(
-                frame,
-                button_area,
-                shared_state.show_new_list_popup,
-            );
+            new_list_popup::render_new_list_button(frame, button_area, ui.show_new_list_popup);
         } else {
             display_area = body_area;
         }
 
-        let entries = match self.lists_panel.get_list_state(&shared_state.lists) {
-            "All" => shared_state.entries.clone(),
-            "Favorites" => shared_state.favorites.clone(),
-            "Bookmarks" => shared_state.bookmarks.clone(),
-            list_name => shared_state
+        let entries = match self.lists_panel.get_list_state(&data.lists) {
+            "All" => data.entries.clone(),
+            "Favorites" => data.favorites.clone(),
+            "Bookmarks" => data.bookmarks.clone(),
+            list_name => data
                 .custom_lists
                 .get(list_name)
                 .cloned()
@@ -88,14 +88,20 @@ impl ListLayout {
         feed_panel::render(
             entries,
             frame,
-            shared_state,
+            data,
+            ui,
             display_area,
             search,
             self.cursor_position == CursorPosition::Feed && panels_focused,
         );
     }
 
-    pub fn handle_key_event(&mut self, key_event: KeyEvent, shared_state: &mut SharedState) {
+    pub fn handle_key_event(
+        &mut self,
+        key_event: KeyEvent,
+        data: &mut DataState,
+        ui: &mut UIState,
+    ) {
         match key_event.code {
             KeyCode::Tab => {
                 if self.cursor_position == CursorPosition::Lists && self.show_lists_panel == true {
@@ -125,15 +131,16 @@ impl ListLayout {
                 }
             },
             KeyCode::Char('/') => self.list_header.toggle_input_mode(),
-            KeyCode::Char('s') => shared_state.toggle_show_feeds_popup(),
-            KeyCode::Char('a') => shared_state.toggle_show_new_feed_popup(),
-            KeyCode::Char('q') => shared_state.exit = true,
+            KeyCode::Char('s') => ui.toggle_show_feeds_popup(),
+            KeyCode::Char('a') => ui.toggle_show_new_feed_popup(),
+            KeyCode::Char('q') => ui.exit = true,
             _ => match self.cursor_position {
-                CursorPosition::Feed => feed_panel::handle_key_event(key_event, shared_state),
+                CursorPosition::Feed => feed_panel::handle_key_event(key_event, data, ui),
                 CursorPosition::Lists => self.lists_panel.handle_key_event(
                     key_event,
                     &mut self.cursor_position,
-                    shared_state,
+                    data,
+                    ui,
                 ),
             },
         }

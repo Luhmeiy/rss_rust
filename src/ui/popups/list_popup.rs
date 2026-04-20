@@ -7,7 +7,7 @@ use ratatui::{
     widgets::{Block, Clear, List, ListItem, ListState, Paragraph},
 };
 
-use crate::state::SharedState;
+use crate::state::{data::DataState, ui::UIState};
 
 pub struct ListPopupState {
     list_state: ListState,
@@ -44,8 +44,8 @@ impl ListPopupState {
 
 pub trait ListPopup {
     fn get_state(&mut self) -> &mut ListPopupState;
-    fn render_list(shared_state: &SharedState) -> Vec<ListItem<'_>>;
-    fn handle_key_event(&mut self, key_event: KeyEvent, shared_state: &mut SharedState);
+    fn render_list(data: &DataState) -> Vec<ListItem<'_>>;
+    fn handle_key_event(&mut self, key_event: KeyEvent, data: &mut DataState, ui: &mut UIState);
 
     fn render_list_item(is_selected: bool, title: String) -> ListItem<'static> {
         let marker: Line = if is_selected {
@@ -61,7 +61,7 @@ pub trait ListPopup {
         ListItem::new(marker)
     }
 
-    fn render(&mut self, frame: &mut Frame, shared_state: &SharedState) {
+    fn render(&mut self, frame: &mut Frame, data: &DataState) {
         let state = self.get_state();
 
         let popup_block = Block::bordered()
@@ -77,7 +77,7 @@ pub trait ListPopup {
             .centered(Constraint::Percentage(60), Constraint::Percentage(20));
         frame.render_widget(Clear, centered_area);
 
-        let items = Self::render_list(shared_state);
+        let items = Self::render_list(data);
         if items.is_empty() {
             let empty = Paragraph::new(format!(" {}", state.empty_message)).block(popup_block);
             return frame.render_widget(empty, centered_area);

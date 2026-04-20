@@ -7,7 +7,7 @@ use ratatui::{
     widgets::{Block, Padding, Paragraph},
 };
 
-use crate::ui::input::Input;
+use crate::ui::components::input::Input;
 
 #[derive(Clone, PartialEq)]
 enum InputMode {

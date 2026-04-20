@@ -4,8 +4,11 @@ use ratatui::{
 };
 
 use crate::{
-    state::SharedState,
-    ui::{feeds_popup::render_feed_button, new_feed_popup::render_new_feed_button, search::Search},
+    state::ui::UIState,
+    ui::{
+        components::search::Search,
+        popups::{feeds_popup::render_feed_button, new_feed_popup::render_new_feed_button},
+    },
 };
 
 pub struct ListHeader {
@@ -19,7 +22,7 @@ impl ListHeader {
         }
     }
 
-    pub fn render(&self, frame: &mut Frame, header_area: Rect, shared_state: &SharedState) {
+    pub fn render(&self, frame: &mut Frame, header_area: Rect, ui: &UIState) {
         let layout = Layout::horizontal([
             Constraint::Length(13),
             Constraint::Length(16),
@@ -28,8 +31,8 @@ impl ListHeader {
         .spacing(1);
         let [feed_area, new_feed_area, search_bar_area] = header_area.layout(&layout);
 
-        render_feed_button(frame, feed_area, shared_state.show_feeds_popup);
-        render_new_feed_button(frame, new_feed_area, shared_state.show_new_feed_popup);
+        render_feed_button(frame, feed_area, ui.show_feeds_popup);
+        render_new_feed_button(frame, new_feed_area, ui.show_new_feed_popup);
         self.search.render(frame, search_bar_area);
     }
 

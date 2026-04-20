@@ -8,8 +8,10 @@ use ratatui::{
     widgets::{Block, List, ListState},
 };
 
-use crate::state::SharedState;
-use crate::ui::list_layout::CursorPosition;
+use crate::{
+    state::{data::DataState, ui::UIState},
+    ui::views::list_layout::CursorPosition,
+};
 
 pub struct ListsPanel {
     list_state: ListState,
@@ -58,19 +60,20 @@ impl ListsPanel {
         &mut self,
         key_event: KeyEvent,
         cursor_position: &mut CursorPosition,
-        shared_state: &mut SharedState,
+        data: &mut DataState,
+        ui: &mut UIState,
     ) {
         match key_event.code {
             KeyCode::Down => self.list_state.select_next(),
             KeyCode::Up => self.list_state.select_previous(),
             KeyCode::Enter => *cursor_position = CursorPosition::Feed,
-            KeyCode::Char('n') => shared_state.toggle_show_new_list_popup(),
+            KeyCode::Char('n') => ui.toggle_show_new_list_popup(),
             KeyCode::Char('d') => {
                 if let Some(selected) = self.list_state.selected() {
-                    if let Some(entry) = shared_state.lists.get(selected) {
-                        if shared_state.custom_lists.contains_key(entry) {
-                            shared_state.custom_lists.remove(entry);
-                            shared_state.lists.remove(selected);
+                    if let Some(entry) = data.lists.get(selected) {
+                        if data.custom_lists.contains_key(entry) {
+                            data.custom_lists.remove(entry);
+                            data.lists.remove(selected);
                         }
                     }
                 }

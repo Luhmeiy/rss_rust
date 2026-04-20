@@ -5,9 +5,9 @@ use std::io::Write;
 use ratatui::{Frame, layout::Rect};
 
 use crate::{
-    feed,
-    state::SharedState,
-    ui::popup::{Popup, PopupState},
+    fetch,
+    state::{data::DataState, ui::UIState},
+    ui::components::popup::{Popup, PopupState, render_button},
 };
 
 pub struct NewFeedPopup {
@@ -27,7 +27,7 @@ impl Popup for NewFeedPopup {
         &mut self.state
     }
 
-    fn on_enter(&mut self, shared_state: &mut SharedState) {
+    fn on_enter(&mut self, data: &mut DataState, _ui: &mut UIState) {
         let feed_url = self.state.get_input().get_field().to_string();
 
         {
@@ -39,24 +39,22 @@ impl Popup for NewFeedPopup {
             writeln!(file, "{feed_url}").unwrap();
         }
 
-        let old_count = shared_state.feeds.len();
-        let old_feed_titles: HashSet<String> =
-            shared_state.feeds.iter().map(|f| f.title.clone()).collect();
-        let (mut new_feeds, new_entries) = feed::run();
+        let old_count = data.feeds.len();
+        let old_feed_titles: HashSet<String> = data.feeds.iter().map(|f| f.title.clone()).collect();
+        let (mut new_feeds, new_entries) = fetch::loader::run();
 
         new_feeds.sort();
 
         for feed in &new_feeds {
             if !old_feed_titles.contains(&feed.title) {
-                shared_state.selected_feeds.insert(feed.title.clone());
+                data.selected_feeds.insert(feed.title.clone());
             }
         }
 
-        shared_state.feeds = new_feeds;
-        shared_state.entries = new_entries;
-        shared_state.list_state.select(Some(0));
+        data.feeds = new_feeds;
+        data.entries = new_entries;
 
-        let success = shared_state.feeds.len() > old_count;
+        let success = data.feeds.len() > old_count;
         *self.state.get_status() = Some(success);
 
         if success {
@@ -64,11 +62,11 @@ impl Popup for NewFeedPopup {
         }
     }
 
-    fn on_esc(&mut self, shared_state: &mut SharedState) {
-        shared_state.toggle_show_new_feed_popup();
+    fn on_esc(&mut self, _data: &mut DataState, ui: &mut UIState) {
+        ui.toggle_show_new_feed_popup();
     }
 }
 
 pub fn render_new_feed_button(frame: &mut Frame, button_area: Rect, show_popup: bool) {
-    crate::ui::popup::render_button(frame, button_area, show_popup, "[a] Add Feed".to_string());
+    render_button(frame, button_area, show_popup, "[a] Add Feed".to_string());
 }

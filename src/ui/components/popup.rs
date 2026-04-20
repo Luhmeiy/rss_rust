@@ -7,7 +7,10 @@ use ratatui::{
     widgets::{Block, Clear, Padding, Paragraph},
 };
 
-use crate::{state::SharedState, ui::input::Input};
+use crate::{
+    state::{data::DataState, ui::UIState},
+    ui::components::input::Input,
+};
 
 pub struct PopupState {
     input: Input,
@@ -85,7 +88,7 @@ pub trait Popup {
         ))
     }
 
-    fn handle_key_event(&mut self, key_event: KeyEvent, shared_state: &mut SharedState) {
+    fn handle_key_event(&mut self, key_event: KeyEvent, data: &mut DataState, ui: &mut UIState) {
         let state = self.get_state();
 
         match key_event.code {
@@ -99,11 +102,11 @@ pub trait Popup {
                     return;
                 }
 
-                self.on_enter(shared_state);
+                self.on_enter(data, ui);
             }
             KeyCode::Esc => {
                 state.reset();
-                self.on_esc(shared_state);
+                self.on_esc(data, ui);
             }
             KeyCode::Char(to_insert) => {
                 *state.get_status() = None;
@@ -113,8 +116,8 @@ pub trait Popup {
         }
     }
 
-    fn on_enter(&mut self, shared_state: &mut SharedState);
-    fn on_esc(&mut self, shared_state: &mut SharedState);
+    fn on_enter(&mut self, data: &mut DataState, ui: &mut UIState);
+    fn on_esc(&mut self, data: &mut DataState, ui: &mut UIState);
 }
 
 pub fn render_button(frame: &mut Frame, button_area: Rect, show_popup: bool, text: String) {

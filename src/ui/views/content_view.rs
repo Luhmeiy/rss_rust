@@ -6,7 +6,7 @@ use ratatui::{
     widgets::{Block, Paragraph, Wrap},
 };
 
-use crate::state::{SharedState, ViewMode};
+use crate::state::{data::DataState, ui::UIState, ui::ViewMode};
 
 pub struct ContentView {
     scroll_offset: u16,
@@ -17,11 +17,11 @@ impl ContentView {
         ContentView { scroll_offset: 0 }
     }
 
-    pub fn render(&self, frame: &mut Frame, shared_state: &mut SharedState) {
-        let (title, feed, date, content_text) = shared_state
+    pub fn render(&self, frame: &mut Frame, data: &DataState, ui: &UIState) {
+        let (title, feed, date, content_text) = ui
             .list_state
             .selected()
-            .and_then(|s| shared_state.entries.get(s))
+            .and_then(|s| data.entries.get(s))
             .map(|e| (e.title(), e.feed(), e.date(), e.content()))
             .or_else(|| {
                 Some((
@@ -64,7 +64,12 @@ impl ContentView {
         frame.render_widget(body, body_area);
     }
 
-    pub fn handle_key_event(&mut self, key_event: KeyEvent, shared_state: &mut SharedState) {
+    pub fn handle_key_event(
+        &mut self,
+        key_event: KeyEvent,
+        data: &mut DataState,
+        ui: &mut UIState,
+    ) {
         match key_event.code {
             KeyCode::Down => {
                 self.scroll_offset = self.scroll_offset.saturating_add(3);
@@ -73,24 +78,24 @@ impl ContentView {
                 self.scroll_offset = self.scroll_offset.saturating_sub(3);
             }
             KeyCode::Right => {
-                shared_state.list_state.select_next();
+                ui.list_state.select_next();
                 self.scroll_offset = 0;
             }
             KeyCode::Left => {
-                shared_state.list_state.select_previous();
+                ui.list_state.select_previous();
                 self.scroll_offset = 0;
             }
             KeyCode::Char('o') => {
-                if let Some(selected) = shared_state.list_state.selected() {
-                    if let Some(entry) = shared_state.entries.get(selected) {
+                if let Some(selected) = ui.list_state.selected() {
+                    if let Some(entry) = data.entries.get(selected) {
                         if let Some(link) = entry.entry.links.first() {
                             let _ = open::that(&link.href);
                         }
                     }
                 }
             }
-            KeyCode::Esc => shared_state.view_mode = ViewMode::List,
-            KeyCode::Char('q') => shared_state.exit = true,
+            KeyCode::Esc => ui.view_mode = ViewMode::List,
+            KeyCode::Char('q') => ui.exit = true,
             _ => {}
         }
     }
