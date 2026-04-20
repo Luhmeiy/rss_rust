@@ -8,7 +8,7 @@ use crate::{
     state::{data::DataState, ui::UIState},
     ui::{
         components::list_header::ListHeader,
-        panels::{feed_panel, lists_panel::ListsPanel},
+        panels::{feed_panel::FeedPanel, lists_panel::ListsPanel},
         popups::new_list_popup,
     },
 };
@@ -22,6 +22,7 @@ pub enum CursorPosition {
 pub struct ListLayout {
     cursor_position: CursorPosition,
     pub list_header: ListHeader,
+    feed_panel: FeedPanel,
     lists_panel: ListsPanel,
     show_lists_panel: bool,
 }
@@ -31,6 +32,7 @@ impl ListLayout {
         ListLayout {
             cursor_position: CursorPosition::Feed,
             list_header: ListHeader::new(),
+            feed_panel: FeedPanel::new(),
             lists_panel: ListsPanel::new(),
             show_lists_panel: false,
         }
@@ -74,7 +76,8 @@ impl ListLayout {
             display_area = body_area;
         }
 
-        let entries = match self.lists_panel.get_list_state(&data.lists) {
+        let list_name = self.lists_panel.get_list_state(&data.lists);
+        let entries = match list_name {
             "All" => data.entries.clone(),
             "Favorites" => data.favorites.clone(),
             "Bookmarks" => data.bookmarks.clone(),
@@ -85,13 +88,18 @@ impl ListLayout {
                 .unwrap_or_default(),
         };
 
-        feed_panel::render(
-            entries,
+        if self
+            .feed_panel
+            .needs_update(list_name, &data.selected_feeds, search, entries.len())
+        {
+            self.feed_panel
+                .update_entries(entries, list_name, &data.selected_feeds, search);
+        }
+
+        self.feed_panel.render(
             frame,
             data,
-            ui,
             display_area,
-            search,
             self.cursor_position == CursorPosition::Feed && panels_focused,
         );
     }
@@ -135,7 +143,7 @@ impl ListLayout {
             KeyCode::Char('a') => ui.toggle_show_new_feed_popup(),
             KeyCode::Char('q') => ui.exit = true,
             _ => match self.cursor_position {
-                CursorPosition::Feed => feed_panel::handle_key_event(key_event, data, ui),
+                CursorPosition::Feed => self.feed_panel.handle_key_event(key_event, data, ui),
                 CursorPosition::Lists => self.lists_panel.handle_key_event(
                     key_event,
                     &mut self.cursor_position,

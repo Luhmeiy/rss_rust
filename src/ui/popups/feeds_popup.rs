@@ -74,7 +74,6 @@ impl ListPopup for FeedPopup {
                         data.feeds = new_feeds;
                         data.entries = new_entries;
                         data.selected_feeds.remove(&feed_to_delete.title);
-                        ui.list_state.select(Some(0));
                     }
                 }
             }
